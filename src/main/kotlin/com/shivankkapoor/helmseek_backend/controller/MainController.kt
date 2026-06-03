@@ -1,5 +1,6 @@
 package com.shivankkapoor.helmseek_backend.controller
 
+import com.shivankkapoor.helmseek_backend.dto.response.HealthResponseDTO
 import com.shivankkapoor.helmseek_backend.service.HealthService
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
@@ -22,12 +23,12 @@ class MainController(
     }
 
     @GetMapping("/health")
-    fun health(): ResponseEntity<Map<String, String>> {
+    fun health(): ResponseEntity<HealthResponseDTO> {
         log.info("[HEALTH] GET /")
         val dbHealthy = healthService.isDbHealthy()
-        return ResponseEntity.ok(mapOf(
-            "status" to "UP",
-            "db" to if (dbHealthy) "UP" else "DOWN"
+        return ResponseEntity.ok(HealthResponseDTO(
+            status = "UP",
+            db = if (dbHealthy) "UP" else "DOWN",
         ))
     }
 }

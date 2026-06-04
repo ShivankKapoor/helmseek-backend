@@ -2,6 +2,7 @@ package com.shivankkapoor.helmseek_backend.controller
 
 import com.shivankkapoor.helmseek_backend.controller.AuthController.Companion.COOKIE_NAME
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
+import com.shivankkapoor.helmseek_backend.dto.request.WeatherCacheRequestDTO
 import com.shivankkapoor.helmseek_backend.model.User
 import com.shivankkapoor.helmseek_backend.repository.UserRepository
 import com.shivankkapoor.helmseek_backend.service.AuthException
@@ -9,6 +10,7 @@ import com.shivankkapoor.helmseek_backend.service.AuthService
 import com.shivankkapoor.helmseek_backend.service.IpService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
+import java.time.OffsetDateTime
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -43,6 +45,21 @@ class UserController(
         return ResponseEntity.ok().build()
     }
 
+    @PostMapping("/weather")
+    fun updateWeather(@Valid @RequestBody body: WeatherCacheRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
+        val user = resolveUser(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        user.cachedTemperature = body.cachedTemperature
+        user.cachedWeatherCode = body.cachedWeatherCode
+        user.cachedWindDirection = body.cachedWindDirection
+        user.cachedWindSpeed = body.cachedWindSpeed
+        user.cachedWeatherDescription = body.cachedWeatherDescription
+        user.cachedIsDay = body.cachedIsDay
+        user.lastWeatherUpdate = OffsetDateTime.now()
+        userRepository.save(user)
+        log.debug("Weather cache updated for username={} ip={}", user.username, ipService.getClientIp(request))
+        return ResponseEntity.ok().build()
+    }
+
     private fun resolveUser(request: HttpServletRequest): User? {
         val sessionId = request.cookies
             ?.find { it.name == COOKIE_NAME }
@@ -72,7 +89,14 @@ private fun User.toConfigDTO() = UserConfigDTO(
     weatherLat = weatherLat,
     weatherLng = weatherLng,
     quickLinksEnabled = quickLinksEnabled,
-    quickLinks = quickLinks
+    quickLinks = quickLinks,
+    cachedTemperature = cachedTemperature,
+    cachedWeatherCode = cachedWeatherCode,
+    cachedWindDirection = cachedWindDirection,
+    cachedWindSpeed = cachedWindSpeed,
+    cachedWeatherDescription = cachedWeatherDescription,
+    cachedIsDay = cachedIsDay,
+    lastWeatherUpdate = lastWeatherUpdate
 )
 
 private fun User.applyConfig(dto: UserConfigDTO) {

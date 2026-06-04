@@ -81,5 +81,27 @@ class User(
 
     @Column(name = "quick_links", nullable = false, columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    var quickLinks: String = "[]"
+    var quickLinks: String = "[]",
+
+    // Cached weather (nullable — not set until frontend pushes weather data)
+    @Column(name = "cached_temperature")
+    var cachedTemperature: Int? = null,
+
+    @Column(name = "cached_weather_code")
+    var cachedWeatherCode: Int? = null,
+
+    @Column(name = "cached_wind_direction")
+    var cachedWindDirection: Int? = null,
+
+    @Column(name = "cached_wind_speed")
+    var cachedWindSpeed: Double? = null,
+
+    @Column(name = "cached_weather_description")
+    var cachedWeatherDescription: String? = null,
+
+    @Column(name = "cached_is_day")
+    var cachedIsDay: Boolean? = null,
+
+    @Column(name = "last_weather_update")
+    var lastWeatherUpdate: OffsetDateTime? = null
 )

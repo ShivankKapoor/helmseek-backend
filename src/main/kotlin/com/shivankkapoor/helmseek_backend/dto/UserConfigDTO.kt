@@ -2,6 +2,7 @@ package com.shivankkapoor.helmseek_backend.dto
 
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import java.time.OffsetDateTime
 
 data class UserConfigDTO(
 
@@ -15,7 +16,7 @@ data class UserConfigDTO(
     // Hero widget
     val heroEnabled: Boolean,
 
-    @field:Pattern(regexp = "greeting|clock")
+    @field:Pattern(regexp = "greeting|clock|both|none")
     val heroMode: String,
 
     @field:Pattern(regexp = "12h|24h")
@@ -45,5 +46,14 @@ data class UserConfigDTO(
     val quickLinksEnabled: Boolean,
 
     @field:Size(max = 5000)
-    val quickLinks: String
+    val quickLinks: String,
+
+    // Cached weather (read-only — updated via POST /user/weather, ignored on POST /user/config)
+    val cachedTemperature: Int? = null,
+    val cachedWeatherCode: Int? = null,
+    val cachedWindDirection: Int? = null,
+    val cachedWindSpeed: Double? = null,
+    val cachedWeatherDescription: String? = null,
+    val cachedIsDay: Boolean? = null,
+    val lastWeatherUpdate: OffsetDateTime? = null
 )

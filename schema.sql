@@ -40,7 +40,16 @@ CREATE TABLE IF NOT EXISTS users (
 
     -- Quick links (variable-length array of objects — stored as JSONB)
     quick_links_enabled BOOLEAN NOT NULL DEFAULT false,
-    quick_links         JSONB   NOT NULL DEFAULT '[]'
+    quick_links         JSONB   NOT NULL DEFAULT '[]',
+
+    -- Cached weather (populated by frontend, avoids rate limits on free weather API)
+    cached_temperature          INTEGER,
+    cached_weather_code         INTEGER,
+    cached_wind_direction       INTEGER,
+    cached_wind_speed           DOUBLE PRECISION,
+    cached_weather_description  VARCHAR(50),
+    cached_is_day               BOOLEAN,
+    last_weather_update         TIMESTAMPTZ
     );
 
 -- ─── Sessions ─────────────────────────────────────────────────────────────────

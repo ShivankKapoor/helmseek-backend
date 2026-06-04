@@ -24,7 +24,7 @@ class AuthService(
 
     @Transactional
     fun login(username: String, password: String): UUID {
-        val user = userRepository.findByUsername(username)
+        val user = userRepository.findByUsername(username.lowercase())
             ?: run {
                 log.warn("Login failed — unknown username={}", username)
                 throw AuthException("Invalid credentials")
@@ -44,6 +44,7 @@ class AuthService(
         log.debug("Session deleted id={}", sessionId)
     }
 
+    @Transactional(readOnly = true)
     fun resolveUser(sessionId: UUID): User {
         return sessionRepository.findByIdAndExpiresAtAfter(sessionId, OffsetDateTime.now())
             ?.user

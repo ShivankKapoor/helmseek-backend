@@ -5,6 +5,7 @@ import com.shivankkapoor.helmseek_backend.service.AuthException
 import com.shivankkapoor.helmseek_backend.service.AuthService
 import com.shivankkapoor.helmseek_backend.service.IpService
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
@@ -30,7 +31,7 @@ class AuthController(
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody body: LoginRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
+    fun login(@Valid @RequestBody body: LoginRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
         val ip = ipService.getClientIp(request)
         val sessionId = try {
             authService.login(body.username, body.password)

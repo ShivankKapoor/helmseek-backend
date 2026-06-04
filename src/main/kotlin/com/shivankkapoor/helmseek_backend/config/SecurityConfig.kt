@@ -3,6 +3,8 @@ package com.shivankkapoor.helmseek_backend.config
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -33,6 +35,9 @@ class SecurityConfig {
         }
         return http.build()
     }
+
+    @Bean
+    fun passwordEncoder(): PasswordEncoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8()
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {

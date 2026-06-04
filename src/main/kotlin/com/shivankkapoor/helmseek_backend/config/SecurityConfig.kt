@@ -29,6 +29,11 @@ class SecurityConfig {
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
             formLogin { disable() }
             httpBasic { disable() }
+            headers {
+                contentSecurityPolicy {
+                    policyDirectives = "default-src 'none'; connect-src $allowedOrigin; frame-ancestors 'none'"
+                }
+            }
             authorizeHttpRequests {
                 authorize(anyRequest, permitAll)
             }

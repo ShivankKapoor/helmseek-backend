@@ -3,8 +3,10 @@ package com.shivankkapoor.helmseek_backend
 import io.github.cdimascio.dotenv.dotenv
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.scheduling.annotation.EnableScheduling
 
 @SpringBootApplication
+@EnableScheduling
 class HelmseekBackendApplication
 
 fun main(args: Array<String>) {

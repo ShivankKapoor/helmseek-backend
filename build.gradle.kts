@@ -29,6 +29,7 @@ dependencies {
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.postgresql:postgresql")
 	implementation("com.bucket4j:bucket4j-core:8.10.1")
+	implementation("com.google.guava:guava:33.4.8-jre")
 	implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")

@@ -89,6 +89,7 @@ class UserController(
 }
 
 private fun User.toConfigDTO() = UserConfigDTO(
+    username = username,
     themeMode = themeMode,
     selectedColor = selectedColor,
     heroEnabled = heroEnabled,

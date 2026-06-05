@@ -6,6 +6,9 @@ import java.time.OffsetDateTime
 
 data class UserConfigDTO(
 
+    // Identity (read-only — ignored on POST /user/config)
+    val username: String = "",
+
     // Theme
     @field:Pattern(regexp = "light|dark")
     val themeMode: String,

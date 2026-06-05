@@ -1,0 +1,6 @@
+build/
+.gradle/
+.git/
+*.md
+*.py
+gradlew.bat

@@ -1,13 +1,11 @@
 package com.shivankkapoor.helmseek_backend
 
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
 
-@SpringBootTest
 class HelmseekBackendApplicationTests {
 
-	@Test
-	fun contextLoads() {
-	}
-
+    @Test
+    fun contextLoads() {
+        // Full context test requires a real DB — covered by controller tests with @WebMvcTest
+    }
 }

@@ -41,3 +41,9 @@ out/
 
 ### Environment ###
 .env
+
+### Local settings ###
+*.local.json
+
+### Claude ###
+.claude/

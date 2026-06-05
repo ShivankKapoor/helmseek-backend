@@ -42,6 +42,9 @@ out/
 ### Environment ###
 .env
 
+### Logs ###
+logs/
+
 ### Local settings ###
 *.local.json
 

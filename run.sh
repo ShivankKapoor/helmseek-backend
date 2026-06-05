@@ -26,4 +26,9 @@ podman run -d \
   --restart unless-stopped \
   "$IMAGE"
 
+mkdir -p logs
+LOG_FILE="logs/$(TZ='America/Chicago' date '+%Y-%m-%d_%H-%M-%S')_CST.log"
+podman logs -f "$CONTAINER" >> "$LOG_FILE" 2>&1 &
+
 echo "HelmSeek backend running on http://localhost:$PORT"
+echo "Logging to $LOG_FILE"

@@ -25,10 +25,11 @@ class AuthService(
     @Transactional
     fun login(username: String, password: String): UUID {
         val user = userRepository.findByUsername(username.lowercase())
-            ?: run {
-                log.warn("Login failed — unknown username={}", username)
-                throw AuthException("Invalid credentials")
-            }
+        if (user == null) {
+            passwordEncoder.matches(password, "\$argon2id\$v=19\$m=16384,t=2,p=1\$dummy")
+            log.warn("Login failed — unknown username={}", username)
+            throw AuthException("Invalid credentials")
+        }
         if (!passwordEncoder.matches(password, user.password)) {
             log.warn("Login failed — wrong password for username={}", username)
             throw AuthException("Invalid credentials")

@@ -52,13 +52,15 @@ class RateLimitFilter(
 
         if (isAuthLogin && !authBucket(ip).tryConsume(1)) {
             response.status = HttpStatus.TOO_MANY_REQUESTS.value()
-            response.writer.write("Too many login attempts. Try again later.")
+            response.contentType = "application/json;charset=UTF-8"
+            response.writer.write("""{"error":"Too many login attempts. Try again later."}""")
             return
         }
 
         if (!globalBucket(ip).tryConsume(1)) {
             response.status = HttpStatus.TOO_MANY_REQUESTS.value()
-            response.writer.write("Too many requests. Try again later.")
+            response.contentType = "application/json;charset=UTF-8"
+            response.writer.write("""{"error":"Too many requests. Try again later."}""")
             return
         }
 

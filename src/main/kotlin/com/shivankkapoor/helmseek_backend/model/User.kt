@@ -5,9 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Generated
-import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.generator.EventType
-import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -79,8 +77,7 @@ class User(
     @Column(name = "quick_links_enabled", nullable = false)
     var quickLinksEnabled: Boolean = false,
 
-    @Column(name = "quick_links", nullable = false, columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "quick_links", nullable = false)
     var quickLinks: String = "[]",
 
     // Cached weather (nullable — not set until frontend pushes weather data)

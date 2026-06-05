@@ -26,7 +26,7 @@ class AuthService(
     fun login(username: String, password: String): UUID {
         val user = userRepository.findByUsername(username.lowercase())
         if (user == null) {
-            passwordEncoder.matches(password, "\$argon2id\$v=19\$m=16384,t=2,p=1\$dummy")
+            passwordEncoder.matches(password, "\$argon2id\$v=19\$m=65536,t=2,p=1\$AcQqkv/HoFC/30x1VdPubg\$shuyKPZ7hKAc2pb8ALx6QrSr2VzyYV0Rcc7IJSjFEqs")
             log.warn("Login failed — unknown username={}", username)
             throw AuthException("Invalid credentials")
         }

@@ -157,6 +157,42 @@ class UserControllerTest {
             .andExpect(status().isBadRequest)
     }
 
+    @Test
+    fun `updateConfig with javascript url in quick links returns 400`() {
+        val bad = validConfig.replace("\"[]\"", "\"[{\\\"label\\\":\\\"x\\\",\\\"url\\\":\\\"javascript:alert(1)\\\"}]\"")
+        mockMvc.perform(
+            post("/user/config")
+                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(bad)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `updateConfig with malformed quick links json returns 400`() {
+        val bad = validConfig.replace("\"[]\"", "\"not-json\"")
+        mockMvc.perform(
+            post("/user/config")
+                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(bad)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `updateConfig with valid https quick link returns 200`() {
+        val good = validConfig.replace("\"[]\"", "\"[{\\\"label\\\":\\\"Google\\\",\\\"url\\\":\\\"https://google.com\\\"}]\"")
+        mockMvc.perform(
+            post("/user/config")
+                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(good)
+        )
+            .andExpect(status().isOk)
+    }
+
     // ── POST /user/weather ────────────────────────────────────────────────────
 
     @Test

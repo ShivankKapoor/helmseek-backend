@@ -1,6 +1,9 @@
 package com.shivankkapoor.helmseek_backend.controller
 
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 import com.shivankkapoor.helmseek_backend.controller.AuthController.Companion.COOKIE_NAME
+import com.shivankkapoor.helmseek_backend.dto.QuickLink
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.dto.request.WeatherCacheRequestDTO
 import com.shivankkapoor.helmseek_backend.model.User
@@ -22,7 +25,8 @@ import java.util.UUID
 class UserController(
     private val authService: AuthService,
     private val userRepository: UserRepository,
-    private val ipService: IpService
+    private val ipService: IpService,
+    private val objectMapper: ObjectMapper
 ) {
 
     companion object {
@@ -39,10 +43,20 @@ class UserController(
     @PostMapping("/config")
     fun updateConfig(@Valid @RequestBody body: UserConfigDTO, request: HttpServletRequest): ResponseEntity<Void> {
         val user = resolveUser(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val links = parseQuickLinks(body.quickLinks) ?: return ResponseEntity.badRequest().build()
+        if (links.any { !it.url.startsWith("https://") && !it.url.startsWith("http://") }) {
+            return ResponseEntity.badRequest().build()
+        }
         user.applyConfig(body)
         userRepository.save(user)
         log.info("Config updated for username={} ip={}", user.username, ipService.getClientIp(request))
         return ResponseEntity.ok().build()
+    }
+
+    private fun parseQuickLinks(json: String): List<QuickLink>? = try {
+        objectMapper.readValue<List<QuickLink>>(json)
+    } catch (e: Exception) {
+        null
     }
 
     @PostMapping("/weather")

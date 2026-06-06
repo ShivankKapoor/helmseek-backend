@@ -9,6 +9,7 @@ import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
@@ -42,7 +43,7 @@ class AuthControllerTest {
     @Test
     fun `login with valid credentials returns 200 and sets session cookie`() {
         val sessionId = UUID.randomUUID()
-        whenever(authService.login("test", "test123")).thenReturn(sessionId)
+        whenever(authService.login(eq("test"), eq("test123"), any())).thenReturn(sessionId)
 
         mockMvc.perform(
             post("/auth/login")
@@ -57,7 +58,7 @@ class AuthControllerTest {
 
     @Test
     fun `login with wrong credentials returns 401`() {
-        whenever(authService.login(any(), any())).thenThrow(AuthException("Invalid credentials"))
+        whenever(authService.login(any(), any(), any())).thenThrow(AuthException("Invalid credentials"))
 
         mockMvc.perform(
             post("/auth/login")

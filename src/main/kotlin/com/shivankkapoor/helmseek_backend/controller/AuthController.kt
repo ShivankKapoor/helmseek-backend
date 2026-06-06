@@ -34,7 +34,7 @@ class AuthController(
     fun login(@Valid @RequestBody body: LoginRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
         val ip = ipService.getClientIp(request)
         val sessionId = try {
-            authService.login(body.username, body.password)
+            authService.login(body.username, body.password, ip)
         } catch (e: AuthException) {
             log.warn("Failed login attempt for username={} ip={}", body.username, ip)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
@@ -51,7 +51,7 @@ class AuthController(
         val ip = ipService.getClientIp(request)
         val sessionCookie = request.cookies?.find { it.name == COOKIE_NAME }
         if (sessionCookie != null) {
-            runCatching { authService.logout(UUID.fromString(sessionCookie.value)) }
+            runCatching { authService.logout(UUID.fromString(sessionCookie.value), ip) }
                 .onSuccess { log.info("Logout successful for session={} ip={}", sessionCookie.value, ip) }
                 .onFailure { log.warn("Logout failed for session={} ip={}", sessionCookie.value, ip) }
         } else {

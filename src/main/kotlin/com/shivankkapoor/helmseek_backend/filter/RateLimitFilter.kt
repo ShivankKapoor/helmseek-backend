@@ -7,6 +7,7 @@ import io.github.bucket4j.Bucket
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -21,6 +22,10 @@ class RateLimitFilter(
     @Value("\${app.rate-limit-burst}") private val burstLimit: Long,
     @Value("\${app.rate-limit-auth-per-minute}") private val authLimit: Long,
 ) : OncePerRequestFilter() {
+
+    companion object {
+        private val log = LoggerFactory.getLogger(RateLimitFilter::class.java)
+    }
 
     private val globalBuckets = CacheBuilder.newBuilder()
         .expireAfterAccess(10, TimeUnit.MINUTES)
@@ -51,6 +56,7 @@ class RateLimitFilter(
         val isAuthLogin = request.method == "POST" && request.requestURI == "/auth/login"
 
         if (isAuthLogin && !authBucket(ip).tryConsume(1)) {
+            log.warn("Auth rate limit exceeded ip={}", ip)
             response.status = HttpStatus.TOO_MANY_REQUESTS.value()
             response.contentType = "application/json;charset=UTF-8"
             response.writer.write("""{"error":"Too many login attempts. Try again later."}""")
@@ -58,6 +64,7 @@ class RateLimitFilter(
         }
 
         if (!globalBucket(ip).tryConsume(1)) {
+            log.warn("Global rate limit exceeded ip={}", ip)
             response.status = HttpStatus.TOO_MANY_REQUESTS.value()
             response.contentType = "application/json;charset=UTF-8"
             response.writer.write("""{"error":"Too many requests. Try again later."}""")

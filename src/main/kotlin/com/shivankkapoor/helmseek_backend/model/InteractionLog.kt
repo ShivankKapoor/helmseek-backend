@@ -1,9 +1,6 @@
 package com.shivankkapoor.helmseek_backend.model
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import org.hibernate.annotations.Generated
 import org.hibernate.generator.EventType
 import java.time.OffsetDateTime
@@ -14,9 +11,9 @@ import java.util.UUID
 class InteractionLog(
 
     @Id
-    @Generated(event = [EventType.INSERT])
-    @Column(updatable = false, nullable = false, insertable = false)
-    val id: UUID? = null,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(updatable = false, nullable = false)
+    val id: Long? = null,
 
     @Column(name = "user_id", nullable = true, updatable = false)
     val user: UUID?,

@@ -64,11 +64,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 -- ─── Interaction Log ──────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS interaction_log (
-                                               id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+                                               id          BIGSERIAL   PRIMARY KEY,
     user_id     UUID        REFERENCES users(id) ON DELETE SET NULL, -- nullable, logs unauthenticated events too
     ip          TEXT        NOT NULL,
     action      TEXT        NOT NULL,
-    metadata    JSONB,                                               -- optional action-specific details
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 

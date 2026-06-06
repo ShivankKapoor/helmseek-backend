@@ -28,9 +28,10 @@ class UserController(
     @GetMapping("/config")
     fun getConfig(request: HttpServletRequest): ResponseEntity<UserConfigDTO> {
         val sessionId = extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val ip = ipService.getClientIp(request)
         return try {
-            val config = userService.getConfig(sessionId)
-            log.debug("Config fetched ip={}", ipService.getClientIp(request))
+            val config = userService.getConfig(sessionId, ip)
+            log.debug("Config fetched ip={}", ip)
             ResponseEntity.ok(config)
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
@@ -40,9 +41,10 @@ class UserController(
     @PostMapping("/config")
     fun updateConfig(@Valid @RequestBody body: UserConfigDTO, request: HttpServletRequest): ResponseEntity<Void> {
         val sessionId = extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val ip = ipService.getClientIp(request)
         return try {
-            userService.updateConfig(sessionId, body)
-            log.info("Config updated ip={}", ipService.getClientIp(request))
+            userService.updateConfig(sessionId, body, ip)
+            log.info("Config updated ip={}", ip)
             ResponseEntity.ok().build()
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
@@ -54,9 +56,10 @@ class UserController(
     @PostMapping("/weather")
     fun updateWeather(@Valid @RequestBody body: WeatherCacheRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
         val sessionId = extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val ip = ipService.getClientIp(request)
         return try {
-            userService.updateWeather(sessionId, body)
-            log.debug("Weather updated ip={}", ipService.getClientIp(request))
+            userService.updateWeather(sessionId, body, ip)
+            log.debug("Weather updated ip={}", ip)
             ResponseEntity.ok().build()
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()

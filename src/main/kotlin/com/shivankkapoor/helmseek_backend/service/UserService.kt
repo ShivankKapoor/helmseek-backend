@@ -16,19 +16,21 @@ import java.util.UUID
 class UserService(
     private val authService: AuthService,
     private val userRepository: UserRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val interactionService: InteractionService
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(UserService::class.java)
     }
 
-    fun getConfig(sessionId: UUID): UserConfigDTO {
+    fun getConfig(sessionId: UUID, ip: String): UserConfigDTO {
         val user = authService.resolveUser(sessionId)
         log.debug("Config fetched for username={}", user.username)
+        interactionService.recordGetConfig(user = user.id!!, ip = ip)
         return user.toConfigDTO()
     }
 
-    fun updateConfig(sessionId: UUID, dto: UserConfigDTO) {
+    fun updateConfig(sessionId: UUID, dto: UserConfigDTO, ip: String) {
         val user = authService.resolveUser(sessionId)
         val links = parseQuickLinks(dto.quickLinks) ?: run {
             log.warn("Invalid quick links JSON for username={}", user.username)
@@ -41,9 +43,10 @@ class UserService(
         user.applyConfig(dto)
         userRepository.save(user)
         log.info("Config updated for username={}", user.username)
+        interactionService.recordUpdateConfig(user = user.id!!, ip = ip)
     }
 
-    fun updateWeather(sessionId: UUID, dto: WeatherCacheRequestDTO) {
+    fun updateWeather(sessionId: UUID, dto: WeatherCacheRequestDTO, ip: String) {
         val user = authService.resolveUser(sessionId)
         user.cachedTemperature = dto.cachedTemperature
         user.cachedWeatherCode = dto.cachedWeatherCode
@@ -54,6 +57,7 @@ class UserService(
         user.lastWeatherUpdate = OffsetDateTime.now()
         userRepository.save(user)
         log.debug("Weather updated for username={}", user.username)
+        interactionService.recordUpdateWeather(user = user.id!!, ip = ip)
     }
 
     private fun parseQuickLinks(json: String): List<QuickLink>? = try {

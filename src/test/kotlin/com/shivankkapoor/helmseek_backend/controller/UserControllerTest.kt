@@ -1,16 +1,17 @@
 package com.shivankkapoor.helmseek_backend.controller
 
 import com.shivankkapoor.helmseek_backend.config.SecurityConfig
+import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.filter.RateLimitFilter
-import com.shivankkapoor.helmseek_backend.model.User
-import com.shivankkapoor.helmseek_backend.repository.UserRepository
 import com.shivankkapoor.helmseek_backend.service.AuthException
-import com.shivankkapoor.helmseek_backend.service.AuthService
 import com.shivankkapoor.helmseek_backend.service.IpService
+import com.shivankkapoor.helmseek_backend.service.UserException
+import com.shivankkapoor.helmseek_backend.service.UserService
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
@@ -34,12 +35,28 @@ import java.util.UUID
 class UserControllerTest {
 
     @Autowired private lateinit var mockMvc: MockMvc
-    @MockitoBean private lateinit var authService: AuthService
-    @MockitoBean private lateinit var userRepository: UserRepository
+    @MockitoBean private lateinit var userService: UserService
     @MockitoBean private lateinit var ipService: IpService
 
     private val sessionId: UUID = UUID.randomUUID()
-    private val testUser = User(username = "test", password = "hashed")
+
+    private val testConfigDTO = UserConfigDTO(
+        themeMode = "light",
+        selectedColor = "#1a73e8,#155ab6",
+        heroEnabled = true,
+        heroMode = "greeting",
+        heroClockFormat = "12h",
+        heroShowSeconds = false,
+        heroGreetingName = "",
+        weatherEnabled = false,
+        weatherZip = "",
+        weatherCorner = "top-right",
+        weatherCity = "",
+        weatherLat = 0.0,
+        weatherLng = 0.0,
+        quickLinksEnabled = false,
+        quickLinks = "[]"
+    )
 
     private val validConfig = """
         {
@@ -75,8 +92,7 @@ class UserControllerTest {
     @BeforeEach
     fun setup() {
         whenever(ipService.getClientIp(any())).thenReturn("127.0.0.1")
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
-        whenever(userRepository.save(any<User>())).thenReturn(testUser)
+        whenever(userService.getConfig(sessionId)).thenReturn(testConfigDTO)
     }
 
     // ── GET /user/config ──────────────────────────────────────────────────────
@@ -101,7 +117,7 @@ class UserControllerTest {
     @Test
     fun `getConfig with invalid session returns 401`() {
         val badSession = UUID.randomUUID()
-        whenever(authService.resolveUser(badSession)).thenThrow(AuthException("Invalid or expired session"))
+        whenever(userService.getConfig(badSession)).thenThrow(AuthException("Invalid or expired session"))
 
         mockMvc.perform(
             get("/user/config")
@@ -160,6 +176,7 @@ class UserControllerTest {
     @Test
     fun `updateConfig with javascript url in quick links returns 400`() {
         val bad = validConfig.replace("\"[]\"", "\"[{\\\"label\\\":\\\"x\\\",\\\"url\\\":\\\"javascript:alert(1)\\\"}]\"")
+        whenever(userService.updateConfig(eq(sessionId), any())).thenThrow(UserException("Invalid URL"))
         mockMvc.perform(
             post("/user/config")
                 .cookie(Cookie("helmseek_session", sessionId.toString()))
@@ -172,6 +189,7 @@ class UserControllerTest {
     @Test
     fun `updateConfig with malformed quick links json returns 400`() {
         val bad = validConfig.replace("\"[]\"", "\"not-json\"")
+        whenever(userService.updateConfig(eq(sessionId), any())).thenThrow(UserException("Invalid JSON"))
         mockMvc.perform(
             post("/user/config")
                 .cookie(Cookie("helmseek_session", sessionId.toString()))

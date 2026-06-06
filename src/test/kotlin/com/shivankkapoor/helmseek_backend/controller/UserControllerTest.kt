@@ -92,7 +92,7 @@ class UserControllerTest {
     @BeforeEach
     fun setup() {
         whenever(ipService.getClientIp(any())).thenReturn("127.0.0.1")
-        whenever(userService.getConfig(sessionId)).thenReturn(testConfigDTO)
+        whenever(userService.getConfig(eq(sessionId), any())).thenReturn(testConfigDTO)
     }
 
     // ── GET /user/config ──────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ class UserControllerTest {
     @Test
     fun `getConfig with invalid session returns 401`() {
         val badSession = UUID.randomUUID()
-        whenever(userService.getConfig(badSession)).thenThrow(AuthException("Invalid or expired session"))
+        whenever(userService.getConfig(eq(badSession), any())).thenThrow(AuthException("Invalid or expired session"))
 
         mockMvc.perform(
             get("/user/config")
@@ -176,7 +176,7 @@ class UserControllerTest {
     @Test
     fun `updateConfig with javascript url in quick links returns 400`() {
         val bad = validConfig.replace("\"[]\"", "\"[{\\\"label\\\":\\\"x\\\",\\\"url\\\":\\\"javascript:alert(1)\\\"}]\"")
-        whenever(userService.updateConfig(eq(sessionId), any())).thenThrow(UserException("Invalid URL"))
+        whenever(userService.updateConfig(eq(sessionId), any(), any())).thenThrow(UserException("Invalid URL"))
         mockMvc.perform(
             post("/user/config")
                 .cookie(Cookie("helmseek_session", sessionId.toString()))
@@ -189,7 +189,7 @@ class UserControllerTest {
     @Test
     fun `updateConfig with malformed quick links json returns 400`() {
         val bad = validConfig.replace("\"[]\"", "\"not-json\"")
-        whenever(userService.updateConfig(eq(sessionId), any())).thenThrow(UserException("Invalid JSON"))
+        whenever(userService.updateConfig(eq(sessionId), any(), any())).thenThrow(UserException("Invalid JSON"))
         mockMvc.perform(
             post("/user/config")
                 .cookie(Cookie("helmseek_session", sessionId.toString()))

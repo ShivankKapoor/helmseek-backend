@@ -7,6 +7,7 @@ import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.dto.request.WeatherCacheRequestDTO
 import com.shivankkapoor.helmseek_backend.model.User
 import com.shivankkapoor.helmseek_backend.repository.UserRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -17,17 +18,29 @@ class UserService(
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
-    fun getConfig(sessionId: UUID): UserConfigDTO =
-        authService.resolveUser(sessionId).toConfigDTO()
+    companion object {
+        private val log = LoggerFactory.getLogger(UserService::class.java)
+    }
+
+    fun getConfig(sessionId: UUID): UserConfigDTO {
+        val user = authService.resolveUser(sessionId)
+        log.debug("Config fetched for username={}", user.username)
+        return user.toConfigDTO()
+    }
 
     fun updateConfig(sessionId: UUID, dto: UserConfigDTO) {
         val user = authService.resolveUser(sessionId)
-        val links = parseQuickLinks(dto.quickLinks) ?: throw UserException("Invalid quick links JSON")
+        val links = parseQuickLinks(dto.quickLinks) ?: run {
+            log.warn("Invalid quick links JSON for username={}", user.username)
+            throw UserException("Invalid quick links JSON")
+        }
         if (links.any { !it.url.startsWith("https://") && !it.url.startsWith("http://") }) {
+            log.warn("Invalid URL in quick links for username={}", user.username)
             throw UserException("Invalid URL in quick links")
         }
         user.applyConfig(dto)
         userRepository.save(user)
+        log.info("Config updated for username={}", user.username)
     }
 
     fun updateWeather(sessionId: UUID, dto: WeatherCacheRequestDTO) {
@@ -40,6 +53,7 @@ class UserService(
         user.cachedIsDay = dto.cachedIsDay
         user.lastWeatherUpdate = OffsetDateTime.now()
         userRepository.save(user)
+        log.debug("Weather updated for username={}", user.username)
     }
 
     private fun parseQuickLinks(json: String): List<QuickLink>? = try {

@@ -4,9 +4,11 @@ import io.github.cdimascio.dotenv.dotenv
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.scheduling.annotation.EnableAsync
 
 @SpringBootApplication
 @EnableScheduling
+@EnableAsync
 class HelmseekBackendApplication
 
 fun main(args: Array<String>) {

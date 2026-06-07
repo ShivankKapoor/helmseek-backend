@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS interaction_log (
     user_id     UUID        REFERENCES users(id) ON DELETE SET NULL, -- nullable, logs unauthenticated events too
     ip          TEXT        NOT NULL,
     action      TEXT        NOT NULL,
+    city        TEXT,
+    country     TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 

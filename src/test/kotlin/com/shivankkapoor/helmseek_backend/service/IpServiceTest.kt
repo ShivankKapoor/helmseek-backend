@@ -2,18 +2,12 @@ package com.shivankkapoor.helmseek_backend.service
 
 import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.springframework.web.client.RestClient
 
 class IpServiceTest {
 
-    private val builder = mock<RestClient.Builder>().also {
-        whenever(it.baseUrl(any<String>())).thenReturn(it)
-        whenever(it.build()).thenReturn(mock())
-    }
-    private val ipService = IpService("", builder)
+    private val ipService = IpService("")
 
     private fun request(cf: String? = null, forwarded: String? = null, remote: String = "10.0.0.1"): HttpServletRequest {
         val req = mock<HttpServletRequest>()

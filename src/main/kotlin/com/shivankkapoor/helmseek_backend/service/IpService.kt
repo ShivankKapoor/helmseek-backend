@@ -9,14 +9,12 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 
 @Service
-class IpService(
-    @Value("\${api.meridian}") private val meridianUrl: String, builder: RestClient.Builder
-) {
+class IpService(@Value("\${api.meridian}") private val meridianUrl: String) {
     companion object {
         private val log = LoggerFactory.getLogger(IpService::class.java)
     }
 
-    private val meridianClient = builder.baseUrl(meridianUrl).build()
+    private val meridianClient = RestClient.create(meridianUrl)
 
     fun getClientIp(request: HttpServletRequest): String =
         request.getHeader("CF-Connecting-IP") ?: request.getHeader("X-Forwarded-For")?.split(",")?.first()?.trim()

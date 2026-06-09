@@ -27,4 +27,10 @@ class InteractionLog(
     @Generated(event = [EventType.INSERT])
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     val createdAt: OffsetDateTime? = null,
+
+    @Column(name = "city", nullable = true, updatable = false)
+    val city: String?,
+
+    @Column(name = "country", nullable = true, updatable = false)
+    val country: String?,
 )

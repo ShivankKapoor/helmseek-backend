@@ -1,5 +1,6 @@
 package com.shivankkapoor.helmseek_backend.service
 
+import com.shivankkapoor.helmseek_backend.dto.response.LocationResponseDTO
 import com.shivankkapoor.helmseek_backend.model.InteractionLog
 import com.shivankkapoor.helmseek_backend.repository.InteractionLogRepository
 import org.junit.jupiter.api.Test
@@ -9,7 +10,10 @@ import java.util.UUID
 class InteractionServiceTest {
 
     private val interactionLogRepository = mock<InteractionLogRepository>()
-    private val interactionService = InteractionService(interactionLogRepository)
+    private val ipService = mock<IpService>().also {
+        whenever(it.getLocation(any())).thenReturn(LocationResponseDTO("US", "US", "New York", "New York"))
+    }
+    private val interactionService = InteractionService(interactionLogRepository, ipService)
 
     private val userId = UUID.randomUUID()
     private val ip = "127.0.0.1"

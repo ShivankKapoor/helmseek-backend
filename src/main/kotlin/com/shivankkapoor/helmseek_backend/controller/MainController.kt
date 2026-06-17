@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
+import java.lang.management.ManagementFactory
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -39,6 +40,7 @@ class MainController(
     fun monitor(): ResponseEntity<Map<String, String>> {
         log.info("Monitoring endpoint called")
 
+
         val uptime = Clock.System.now() - startTime
         val days = uptime.inWholeDays
         val hours = uptime.inWholeHours % 24
@@ -47,11 +49,14 @@ class MainController(
 
         val uptimeStr = "${if (days > 0) "${days}d " else ""}${hours}h ${minutes}m ${seconds}s"
 
+        val threadCount = ManagementFactory.getThreadMXBean().threadCount
+
         return ResponseEntity.ok(mapOf(
             "status" to "UP",
             "uptime" to uptimeStr,
             "platform" to "Java",
             "vendor" to System.getProperty("java.vendor"),
+            "threadCount" to threadCount.toString(),
         ))
     }
 }

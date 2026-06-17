@@ -53,6 +53,10 @@ allOpen {
 	annotation("jakarta.persistence.Embeddable")
 }
 
+tasks.bootRun {
+	jvmArgs("-Djdk.trackAllThreads=true")
+}
+
 tasks.withType<Test> {
 	useJUnitPlatform()
 }

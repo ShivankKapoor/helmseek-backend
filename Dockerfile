@@ -25,4 +25,4 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 
 EXPOSE 7666
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Djdk.trackAllThreads=true", "-jar", "app.jar"]

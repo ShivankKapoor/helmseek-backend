@@ -17,7 +17,12 @@ class SessionCleanupJob(private val sessionRepository: SessionRepository) {
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
     fun deleteExpiredSessions() {
+        log.info("[Cron triggered]: Deleting expired sessions")
         val deleted = sessionRepository.deleteExpired(OffsetDateTime.now())
-        if (deleted > 0) log.info("Deleted {} expired session(s)", deleted)
+        if (deleted > 0) {
+            log.info("Deleted {} expired session(s)", deleted)
+        } else {
+            log.info("No expired sessions found")
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.shivankkapoor.helmseek_backend.service
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.readValue
 import com.shivankkapoor.helmseek_backend.dto.QuickLink
+import com.shivankkapoor.helmseek_backend.config.FontOptions
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.dto.request.WeatherCacheRequestDTO
 import com.shivankkapoor.helmseek_backend.model.User
@@ -32,6 +33,10 @@ class UserService(
 
     fun updateConfig(sessionId: UUID, dto: UserConfigDTO, ip: String) {
         val user = authService.resolveUser(sessionId)
+        if (dto.fontFamily !in FontOptions.ALLOWED_FONTS) {
+            log.warn("Invalid font family for username={}", user.username)
+            throw UserException("Invalid font family")
+        }
         val links = parseQuickLinks(dto.quickLinks) ?: run {
             log.warn("Invalid quick links JSON for username={}", user.username)
             throw UserException("Invalid quick links JSON")
@@ -84,6 +89,7 @@ private fun User.toConfigDTO() = UserConfigDTO(
     weatherCity = weatherCity,
     weatherLat = weatherLat,
     weatherLng = weatherLng,
+    fontFamily = fontFamily,
     quickLinksEnabled = quickLinksEnabled,
     quickLinks = quickLinks,
     cachedTemperature = cachedTemperature,
@@ -109,6 +115,7 @@ private fun User.applyConfig(dto: UserConfigDTO) {
     weatherCity = dto.weatherCity
     weatherLat = dto.weatherLat
     weatherLng = dto.weatherLng
+    fontFamily = dto.fontFamily
     quickLinksEnabled = dto.quickLinksEnabled
     quickLinks = dto.quickLinks
 }

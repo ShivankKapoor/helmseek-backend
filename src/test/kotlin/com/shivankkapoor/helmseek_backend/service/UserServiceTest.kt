@@ -40,6 +40,7 @@ class UserServiceTest {
         weatherCity = "",
         weatherLat = 0.0,
         weatherLng = 0.0,
+        fontFamily = "Fira Code",
         quickLinksEnabled = false,
         quickLinks = "[]"
     )
@@ -118,6 +119,14 @@ class UserServiceTest {
         whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
 
         assertThrows<AuthException> { userService.updateConfig(sessionId, validDto, ip) }
+    }
+
+    @Test
+    fun `updateConfig with invalid font family throws UserException`() {
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        val dto = validDto.copy(fontFamily = "Comic Sans MS")
+
+        assertThrows<UserException> { userService.updateConfig(sessionId, dto, ip) }
     }
 
     @Test

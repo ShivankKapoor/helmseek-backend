@@ -38,6 +38,10 @@ CREATE TABLE IF NOT EXISTS users (
     weather_lat     DOUBLE PRECISION NOT NULL DEFAULT 0,
     weather_lng     DOUBLE PRECISION NOT NULL DEFAULT 0,
 
+    -- Font
+    font_family         TEXT    NOT NULL DEFAULT 'Fira Code'
+    CHECK (char_length(font_family) <= 100),
+
     -- Quick links (variable-length array of objects — stored as JSONB)
     quick_links_enabled BOOLEAN NOT NULL DEFAULT false,
     quick_links         TEXT    NOT NULL DEFAULT '[]',

@@ -54,6 +54,7 @@ class UserControllerTest {
         weatherCity = "",
         weatherLat = 0.0,
         weatherLng = 0.0,
+        fontFamily = "Fira Code",
         quickLinksEnabled = false,
         quickLinks = "[]"
     )
@@ -73,6 +74,7 @@ class UserControllerTest {
             "weatherCity": "",
             "weatherLat": 0.0,
             "weatherLng": 0.0,
+            "fontFamily": "Fira Code",
             "quickLinksEnabled": false,
             "quickLinks": "[]"
         }
@@ -164,6 +166,19 @@ class UserControllerTest {
     @Test
     fun `updateConfig with invalid heroMode returns 400`() {
         val bad = validConfig.replace("\"greeting\"", "\"unknown\"")
+        mockMvc.perform(
+            post("/user/config")
+                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(bad)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `updateConfig with invalid fontFamily returns 400`() {
+        val bad = validConfig.replace("\"Fira Code\"", "\"Comic Sans MS\"")
+        whenever(userService.updateConfig(eq(sessionId), any(), any())).thenThrow(UserException("Invalid font family"))
         mockMvc.perform(
             post("/user/config")
                 .cookie(Cookie("helmseek_session", sessionId.toString()))

@@ -45,6 +45,9 @@ data class UserConfigDTO(
     val weatherLat: Double,
     val weatherLng: Double,
 
+    @field:Size(max = 100)
+    val fontFamily: String,
+
     // Quick links
     val quickLinksEnabled: Boolean,
 

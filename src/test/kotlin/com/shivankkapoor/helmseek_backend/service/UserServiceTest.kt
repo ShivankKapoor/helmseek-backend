@@ -122,6 +122,14 @@ class UserServiceTest {
     }
 
     @Test
+    fun `updateConfig with invalid font family throws UserException`() {
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        val dto = validDto.copy(fontFamily = "Comic Sans MS")
+
+        assertThrows<UserException> { userService.updateConfig(sessionId, dto, ip) }
+    }
+
+    @Test
     fun `updateConfig with malformed quick links throws UserException`() {
         whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
         val dto = validDto.copy(quickLinks = "not-json")

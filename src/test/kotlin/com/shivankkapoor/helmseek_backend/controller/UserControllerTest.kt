@@ -177,7 +177,8 @@ class UserControllerTest {
 
     @Test
     fun `updateConfig with invalid fontFamily returns 400`() {
-        val bad = validConfig.replace("\"Fira Code\"", "\"<script>alert(1)</script>\"")
+        val bad = validConfig.replace("\"Fira Code\"", "\"Comic Sans MS\"")
+        whenever(userService.updateConfig(eq(sessionId), any(), any())).thenThrow(UserException("Invalid font family"))
         mockMvc.perform(
             post("/user/config")
                 .cookie(Cookie("helmseek_session", sessionId.toString()))

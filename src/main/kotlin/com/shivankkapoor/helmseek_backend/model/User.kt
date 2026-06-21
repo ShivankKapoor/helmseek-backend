@@ -100,5 +100,8 @@ class User(
     var cachedIsDay: Boolean? = null,
 
     @Column(name = "last_weather_update")
-    var lastWeatherUpdate: OffsetDateTime? = null
+    var lastWeatherUpdate: OffsetDateTime? = null,
+
+    @Column(name = "font_family", nullable = false)
+    var fontFamily: String = "Fira Code"
 )

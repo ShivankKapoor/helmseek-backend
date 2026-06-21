@@ -45,6 +45,9 @@ data class UserConfigDTO(
     val weatherLat: Double,
     val weatherLng: Double,
 
+    @field:Pattern(regexp = "[A-Za-z0-9 ]{1,100}")
+    val fontFamily: String,
+
     // Quick links
     val quickLinksEnabled: Boolean,
 

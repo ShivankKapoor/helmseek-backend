@@ -84,6 +84,7 @@ private fun User.toConfigDTO() = UserConfigDTO(
     weatherCity = weatherCity,
     weatherLat = weatherLat,
     weatherLng = weatherLng,
+    fontFamily = fontFamily,
     quickLinksEnabled = quickLinksEnabled,
     quickLinks = quickLinks,
     cachedTemperature = cachedTemperature,
@@ -109,6 +110,7 @@ private fun User.applyConfig(dto: UserConfigDTO) {
     weatherCity = dto.weatherCity
     weatherLat = dto.weatherLat
     weatherLng = dto.weatherLng
+    fontFamily = dto.fontFamily
     quickLinksEnabled = dto.quickLinksEnabled
     quickLinks = dto.quickLinks
 }

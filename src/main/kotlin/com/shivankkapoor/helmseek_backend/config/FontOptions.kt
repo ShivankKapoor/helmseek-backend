@@ -13,5 +13,6 @@ object FontOptions {
         "Inter",
         "Roboto",
         "Nunito",
+        "Arimo",
     )
 }

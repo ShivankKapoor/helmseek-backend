@@ -40,6 +40,7 @@ class UserServiceTest {
         weatherCity = "",
         weatherLat = 0.0,
         weatherLng = 0.0,
+        fontFamily = "Fira Code",
         quickLinksEnabled = false,
         quickLinks = "[]"
     )

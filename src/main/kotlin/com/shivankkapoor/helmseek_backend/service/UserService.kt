@@ -98,7 +98,8 @@ private fun User.toConfigDTO() = UserConfigDTO(
     cachedWindSpeed = cachedWindSpeed,
     cachedWeatherDescription = cachedWeatherDescription,
     cachedIsDay = cachedIsDay,
-    lastWeatherUpdate = lastWeatherUpdate
+    lastWeatherUpdate = lastWeatherUpdate,
+    motdEnabled = motdEnabled
 )
 
 private fun User.applyConfig(dto: UserConfigDTO) {
@@ -118,4 +119,5 @@ private fun User.applyConfig(dto: UserConfigDTO) {
     fontFamily = dto.fontFamily
     quickLinksEnabled = dto.quickLinksEnabled
     quickLinks = dto.quickLinks
+    motdEnabled = dto.motdEnabled
 }

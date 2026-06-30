@@ -103,5 +103,8 @@ class User(
     var lastWeatherUpdate: OffsetDateTime? = null,
 
     @Column(name = "font_family", nullable = false)
-    var fontFamily: String = "Fira Code"
+    var fontFamily: String = "Fira Code",
+
+    @Column(name = "motd_enabled", nullable = false)
+    var motdEnabled: Boolean = false
 )

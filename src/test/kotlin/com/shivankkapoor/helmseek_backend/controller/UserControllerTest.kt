@@ -56,7 +56,8 @@ class UserControllerTest {
         weatherLng = 0.0,
         fontFamily = "Fira Code",
         quickLinksEnabled = false,
-        quickLinks = "[]"
+        quickLinks = "[]",
+        motdEnabled = false
     )
 
     private val validConfig = """
@@ -76,7 +77,8 @@ class UserControllerTest {
             "weatherLng": 0.0,
             "fontFamily": "Fira Code",
             "quickLinksEnabled": false,
-            "quickLinks": "[]"
+            "quickLinks": "[]",
+            "motdEnabled": false
         }
     """.trimIndent()
 

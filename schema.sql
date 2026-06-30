@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS users (
     font_family         TEXT    NOT NULL DEFAULT 'Fira Code'
     CHECK (char_length(font_family) <= 100),
 
+    -- Message of the Day
+    motd_enabled        BOOLEAN NOT NULL DEFAULT false,
+
     -- Quick links (variable-length array of objects — stored as JSONB)
     quick_links_enabled BOOLEAN NOT NULL DEFAULT false,
     quick_links         TEXT    NOT NULL DEFAULT '[]',

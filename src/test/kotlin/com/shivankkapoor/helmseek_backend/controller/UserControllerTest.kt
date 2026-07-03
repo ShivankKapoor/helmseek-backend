@@ -1,10 +1,12 @@
 package com.shivankkapoor.helmseek_backend.controller
 
 import com.shivankkapoor.helmseek_backend.config.SecurityConfig
+import com.shivankkapoor.helmseek_backend.dto.QuoteDTO
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.filter.RateLimitFilter
 import com.shivankkapoor.helmseek_backend.service.AuthException
 import com.shivankkapoor.helmseek_backend.service.IpService
+import com.shivankkapoor.helmseek_backend.service.QuoteService
 import com.shivankkapoor.helmseek_backend.service.UserException
 import com.shivankkapoor.helmseek_backend.service.UserService
 import jakarta.servlet.http.Cookie
@@ -37,6 +39,7 @@ class UserControllerTest {
     @Autowired private lateinit var mockMvc: MockMvc
     @MockitoBean private lateinit var userService: UserService
     @MockitoBean private lateinit var ipService: IpService
+    @MockitoBean private lateinit var quoteService: QuoteService
 
     private val sessionId: UUID = UUID.randomUUID()
 
@@ -273,5 +276,26 @@ class UserControllerTest {
                 .content(bad)
         )
             .andExpect(status().isBadRequest)
+    }
+
+    // ── GET /user/quote ───────────────────────────────────────────────────────
+
+    @Test
+    fun `getQuote with valid session returns 200 and quote`() {
+        whenever(quoteService.getQuote()).thenReturn(QuoteDTO("Stay hungry, stay foolish.", "Steve Jobs"))
+
+        mockMvc.perform(
+            get("/user/quote")
+                .cookie(Cookie("helmseek_session", sessionId.toString()))
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.quote").value("Stay hungry, stay foolish."))
+            .andExpect(jsonPath("$.author").value("Steve Jobs"))
+    }
+
+    @Test
+    fun `getQuote without cookie returns 401`() {
+        mockMvc.perform(get("/user/quote"))
+            .andExpect(status().isUnauthorized)
     }
 }

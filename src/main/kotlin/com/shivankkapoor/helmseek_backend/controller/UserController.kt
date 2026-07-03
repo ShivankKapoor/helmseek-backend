@@ -1,10 +1,12 @@
 package com.shivankkapoor.helmseek_backend.controller
 
 import com.shivankkapoor.helmseek_backend.controller.AuthController.Companion.COOKIE_NAME
+import com.shivankkapoor.helmseek_backend.dto.QuoteDTO
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.dto.request.WeatherCacheRequestDTO
 import com.shivankkapoor.helmseek_backend.service.AuthException
 import com.shivankkapoor.helmseek_backend.service.IpService
+import com.shivankkapoor.helmseek_backend.service.QuoteService
 import com.shivankkapoor.helmseek_backend.service.UserException
 import com.shivankkapoor.helmseek_backend.service.UserService
 import jakarta.servlet.http.HttpServletRequest
@@ -19,7 +21,8 @@ import java.util.UUID
 @RequestMapping("/user")
 class UserController(
     private val userService: UserService,
-    private val ipService: IpService
+    private val ipService: IpService,
+    private val quoteService: QuoteService
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(UserController::class.java)
@@ -64,6 +67,14 @@ class UserController(
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
+    }
+
+    @GetMapping("/quote")
+    fun getQuote(request: HttpServletRequest): ResponseEntity<QuoteDTO> {
+        extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val ip = ipService.getClientIp(request)
+        log.info("Quote request made from ip={}", ip)
+        return ResponseEntity.ok(quoteService.getQuote())
     }
 
     private fun extractSessionId(request: HttpServletRequest): UUID? =

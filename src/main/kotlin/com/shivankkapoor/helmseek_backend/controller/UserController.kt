@@ -1,6 +1,5 @@
 package com.shivankkapoor.helmseek_backend.controller
 
-import com.shivankkapoor.helmseek_backend.controller.AuthController.Companion.COOKIE_NAME
 import com.shivankkapoor.helmseek_backend.dto.QuoteDTO
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.dto.request.WeatherCacheRequestDTO
@@ -16,7 +15,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.util.UUID
 
 @RestController
 @RequestMapping("/user")
@@ -32,7 +30,7 @@ class UserController(
 
     @GetMapping("/config")
     fun getConfig(request: HttpServletRequest): ResponseEntity<UserConfigDTO> {
-        val sessionId = extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
             val config = userService.getConfig(sessionId, ip)
@@ -45,7 +43,7 @@ class UserController(
 
     @PostMapping("/config")
     fun updateConfig(@Valid @RequestBody body: UserConfigDTO, request: HttpServletRequest): ResponseEntity<Void> {
-        val sessionId = extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
             userService.updateConfig(sessionId, body, ip)
@@ -60,7 +58,7 @@ class UserController(
 
     @PostMapping("/weather")
     fun updateWeather(@Valid @RequestBody body: WeatherCacheRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
-        val sessionId = extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
             userService.updateWeather(sessionId, body, ip)
@@ -73,7 +71,7 @@ class UserController(
 
     @GetMapping("/quote")
     fun getQuote(request: HttpServletRequest): ResponseEntity<QuoteDTO> {
-        val sessionId = extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
             authService.resolveUser(sessionId)
@@ -83,10 +81,4 @@ class UserController(
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
     }
-
-    private fun extractSessionId(request: HttpServletRequest): UUID? =
-        request.cookies
-            ?.find { it.name == COOKIE_NAME }
-            ?.value
-            ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 }

@@ -12,6 +12,7 @@ import com.shivankkapoor.helmseek_backend.service.QuoteService
 import com.shivankkapoor.helmseek_backend.service.UserException
 import com.shivankkapoor.helmseek_backend.service.UserService
 import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -105,6 +106,13 @@ class UserControllerTest {
         whenever(ipService.getClientIp(any())).thenReturn("127.0.0.1")
         whenever(userService.getConfig(eq(sessionId), any())).thenReturn(testConfigDTO)
         whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.extractSessionId(any())).thenAnswer { invocation ->
+            val req = invocation.getArgument<HttpServletRequest>(0)
+            req.cookies
+                ?.find { it.name == "helmseek_session" }
+                ?.value
+                ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+        }
     }
 
     // ── GET /user/config ──────────────────────────────────────────────────────

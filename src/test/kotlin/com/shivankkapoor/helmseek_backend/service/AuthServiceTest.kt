@@ -4,6 +4,8 @@ import com.shivankkapoor.helmseek_backend.model.Session
 import com.shivankkapoor.helmseek_backend.model.User
 import com.shivankkapoor.helmseek_backend.repository.SessionRepository
 import com.shivankkapoor.helmseek_backend.repository.UserRepository
+import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.*
@@ -182,5 +184,41 @@ class AuthServiceTest {
         verify(sessionRepository).findByIdAndExpiresAtAfter(eq(sessionId), captor.capture())
         val used = captor.firstValue
         assert(!used.isBefore(before) && !used.isAfter(after))
+    }
+
+    private fun requestWithCookies(vararg cookies: Cookie): HttpServletRequest {
+        val request = mock<HttpServletRequest>()
+        whenever(request.cookies).thenReturn(cookies)
+        return request
+    }
+
+    @Test
+    fun `extractSessionId with valid session cookie returns UUID`() {
+        val sessionId = UUID.randomUUID()
+        val request = requestWithCookies(Cookie("helmseek_session", sessionId.toString()))
+
+        assert(authService.extractSessionId(request) == sessionId)
+    }
+
+    @Test
+    fun `extractSessionId with no cookies returns null`() {
+        val request = mock<HttpServletRequest>()
+        whenever(request.cookies).thenReturn(null)
+
+        assert(authService.extractSessionId(request) == null)
+    }
+
+    @Test
+    fun `extractSessionId with unrelated cookie returns null`() {
+        val request = requestWithCookies(Cookie("some_other_cookie", "value"))
+
+        assert(authService.extractSessionId(request) == null)
+    }
+
+    @Test
+    fun `extractSessionId with malformed session cookie returns null`() {
+        val request = requestWithCookies(Cookie("helmseek_session", "not-a-uuid"))
+
+        assert(authService.extractSessionId(request) == null)
     }
 }

@@ -1,9 +1,11 @@
 package com.shivankkapoor.helmseek_backend.service
 
+import com.shivankkapoor.helmseek_backend.controller.AuthController.Companion.COOKIE_NAME
 import com.shivankkapoor.helmseek_backend.model.Session
 import com.shivankkapoor.helmseek_backend.model.User
 import com.shivankkapoor.helmseek_backend.repository.SessionRepository
 import com.shivankkapoor.helmseek_backend.repository.UserRepository
+import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -59,6 +61,12 @@ class AuthService(
         return sessionRepository.findByIdAndExpiresAtAfter(sessionId, OffsetDateTime.now())?.user
             ?: throw AuthException("Invalid or expired session")
     }
+
+    fun extractSessionId(request: HttpServletRequest): UUID? =
+        request.cookies
+            ?.find { it.name == COOKIE_NAME }
+            ?.value
+            ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 }
 
 class AuthException(message: String) : RuntimeException(message)

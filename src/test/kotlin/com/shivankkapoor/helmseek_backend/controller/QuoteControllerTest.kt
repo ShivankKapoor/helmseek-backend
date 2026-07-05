@@ -8,11 +8,13 @@ import com.shivankkapoor.helmseek_backend.service.AuthException
 import com.shivankkapoor.helmseek_backend.service.AuthService
 import com.shivankkapoor.helmseek_backend.service.IpService
 import com.shivankkapoor.helmseek_backend.service.QuoteService
+import com.shivankkapoor.helmseek_backend.service.UserService
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
@@ -22,6 +24,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
@@ -37,6 +40,7 @@ class QuoteControllerTest {
     @MockitoBean private lateinit var ipService: IpService
     @MockitoBean private lateinit var authService: AuthService
     @MockitoBean private lateinit var quoteService: QuoteService
+    @MockitoBean private lateinit var userService: UserService
 
     private val sessionId: UUID = UUID.randomUUID()
     private val testUser = User(id = UUID.randomUUID(), username = "testuser", password = "hashed")
@@ -82,6 +86,37 @@ class QuoteControllerTest {
 
         mockMvc.perform(
             get("/quote")
+                .cookie(Cookie("helmseek_session", badSession.toString()))
+        )
+            .andExpect(status().isUnauthorized)
+    }
+
+    // ── POST /quote/hideQuote ────────────────────────────────────────────────────
+
+    @Test
+    fun `hideQuote with valid session returns 200`() {
+        mockMvc.perform(
+            post("/quote/hideQuote")
+                .cookie(Cookie("helmseek_session", sessionId.toString()))
+        )
+            .andExpect(status().isOk)
+
+        verify(userService).hideQuote(sessionId, "127.0.0.1")
+    }
+
+    @Test
+    fun `hideQuote without cookie returns 401`() {
+        mockMvc.perform(post("/quote/hideQuote"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `hideQuote with invalid or expired session returns 401`() {
+        val badSession = UUID.randomUUID()
+        whenever(userService.hideQuote(badSession, "127.0.0.1")).thenThrow(AuthException("Invalid or expired session"))
+
+        mockMvc.perform(
+            post("/quote/hideQuote")
                 .cookie(Cookie("helmseek_session", badSession.toString()))
         )
             .andExpect(status().isUnauthorized)

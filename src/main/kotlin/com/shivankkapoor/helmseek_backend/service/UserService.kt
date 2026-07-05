@@ -65,6 +65,14 @@ class UserService(
         interactionService.recordUpdateWeather(user = user.id!!, ip = ip)
     }
 
+    fun hideQuote(sessionId: UUID, ip: String) {
+        val user = authService.resolveUser(sessionId)
+        user.hideQuote = true
+        userRepository.save(user)
+        log.info("Quote hidden for username={}", user.username)
+        interactionService.recordHideQuote(user = user.id!!, ip = ip)
+    }
+
     private fun parseQuickLinks(json: String): List<QuickLink>? = try {
         objectMapper.readValue<List<QuickLink>>(json)
     } catch (e: Exception) {
@@ -99,7 +107,8 @@ private fun User.toConfigDTO() = UserConfigDTO(
     cachedWeatherDescription = cachedWeatherDescription,
     cachedIsDay = cachedIsDay,
     lastWeatherUpdate = lastWeatherUpdate,
-    motdEnabled = motdEnabled
+    motdEnabled = motdEnabled,
+    hideQuote = hideQuote
 )
 
 private fun User.applyConfig(dto: UserConfigDTO) {

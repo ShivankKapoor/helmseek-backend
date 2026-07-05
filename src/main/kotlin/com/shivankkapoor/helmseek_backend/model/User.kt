@@ -106,5 +106,8 @@ class User(
     var fontFamily: String = "Fira Code",
 
     @Column(name = "motd_enabled", nullable = false)
-    var motdEnabled: Boolean = false
+    var motdEnabled: Boolean = false,
+
+    @Column(name = "hide_quote", nullable = false)
+    var hideQuote: Boolean = false
 )

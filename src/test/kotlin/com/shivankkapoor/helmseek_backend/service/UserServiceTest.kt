@@ -213,4 +213,32 @@ class UserServiceTest {
 
         assertThrows<AuthException> { userService.updateWeather(sessionId, validWeatherDto, ip) }
     }
+
+    @Test
+    fun `hideQuote sets hideQuote flag and saves user`() {
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(userRepository.save(any<User>())).thenReturn(testUser)
+
+        userService.hideQuote(sessionId, ip)
+
+        assert(testUser.hideQuote)
+        verify(userRepository).save(testUser)
+    }
+
+    @Test
+    fun `hideQuote records hide quote interaction`() {
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(userRepository.save(any<User>())).thenReturn(testUser)
+
+        userService.hideQuote(sessionId, ip)
+
+        verify(interactionService).recordHideQuote(user = userId, ip = ip)
+    }
+
+    @Test
+    fun `hideQuote with invalid session throws AuthException`() {
+        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+
+        assertThrows<AuthException> { userService.hideQuote(sessionId, ip) }
+    }
 }

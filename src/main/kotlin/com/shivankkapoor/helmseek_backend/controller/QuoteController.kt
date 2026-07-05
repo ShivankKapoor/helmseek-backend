@@ -1,67 +1,66 @@
 package com.shivankkapoor.helmseek_backend.controller
 
 import com.shivankkapoor.helmseek_backend.dto.QuoteDTO
-import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
-import com.shivankkapoor.helmseek_backend.dto.request.WeatherCacheRequestDTO
 import com.shivankkapoor.helmseek_backend.service.AuthException
 import com.shivankkapoor.helmseek_backend.service.AuthService
 import com.shivankkapoor.helmseek_backend.service.IpService
 import com.shivankkapoor.helmseek_backend.service.QuoteService
-import com.shivankkapoor.helmseek_backend.service.UserException
 import com.shivankkapoor.helmseek_backend.service.UserService
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/user")
-class UserController(
-    private val userService: UserService,
+@RequestMapping("/quote")
+class QuoteController(
     private val ipService: IpService,
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val quoteService: QuoteService,
+    private val userService: UserService
 ) {
+
     companion object {
-        private val log = LoggerFactory.getLogger(UserController::class.java)
+        private val log = LoggerFactory.getLogger(QuoteController::class.java)
     }
 
-    @GetMapping("/config")
-    fun getConfig(request: HttpServletRequest): ResponseEntity<UserConfigDTO> {
+    @GetMapping
+    fun getQuote(request: HttpServletRequest): ResponseEntity<QuoteDTO> {
         val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
-            val config = userService.getConfig(sessionId, ip)
-            log.debug("Config fetched ip={}", ip)
-            ResponseEntity.ok(config)
+            authService.resolveUser(sessionId)
+            log.info("Quote request made from ip={}", ip)
+            ResponseEntity.ok(quoteService.getQuote())
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
     }
 
-    @PostMapping("/config")
-    fun updateConfig(@Valid @RequestBody body: UserConfigDTO, request: HttpServletRequest): ResponseEntity<Void> {
+    @PostMapping("/hideQuote")
+    fun hideQuote(request: HttpServletRequest): ResponseEntity<Void> {
         val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
-            userService.updateConfig(sessionId, body, ip)
-            log.info("Config updated ip={}", ip)
+            userService.hideQuote(sessionId, ip)
+            log.info("Quote hidden ip={}", ip)
             ResponseEntity.ok().build()
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        } catch (e: UserException) {
-            ResponseEntity.badRequest().build()
         }
     }
 
-    @PostMapping("/weather")
-    fun updateWeather(@Valid @RequestBody body: WeatherCacheRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
+    @PostMapping("/unhideQuote")
+    fun unhideQuote(request: HttpServletRequest): ResponseEntity<Void> {
         val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
-            userService.updateWeather(sessionId, body, ip)
-            log.debug("Weather updated ip={}", ip)
+            userService.unhideQuote(sessionId, ip)
+            log.info("Quote unhidden ip={}", ip)
             ResponseEntity.ok().build()
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()

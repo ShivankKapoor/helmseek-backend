@@ -4,10 +4,12 @@ import com.shivankkapoor.helmseek_backend.config.SecurityConfig
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.filter.RateLimitFilter
 import com.shivankkapoor.helmseek_backend.service.AuthException
+import com.shivankkapoor.helmseek_backend.service.AuthService
 import com.shivankkapoor.helmseek_backend.service.IpService
 import com.shivankkapoor.helmseek_backend.service.UserException
 import com.shivankkapoor.helmseek_backend.service.UserService
 import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -37,6 +39,7 @@ class UserControllerTest {
     @Autowired private lateinit var mockMvc: MockMvc
     @MockitoBean private lateinit var userService: UserService
     @MockitoBean private lateinit var ipService: IpService
+    @MockitoBean private lateinit var authService: AuthService
 
     private val sessionId: UUID = UUID.randomUUID()
 
@@ -56,7 +59,8 @@ class UserControllerTest {
         weatherLng = 0.0,
         fontFamily = "Fira Code",
         quickLinksEnabled = false,
-        quickLinks = "[]"
+        quickLinks = "[]",
+        motdEnabled = false
     )
 
     private val validConfig = """
@@ -76,7 +80,8 @@ class UserControllerTest {
             "weatherLng": 0.0,
             "fontFamily": "Fira Code",
             "quickLinksEnabled": false,
-            "quickLinks": "[]"
+            "quickLinks": "[]",
+            "motdEnabled": false
         }
     """.trimIndent()
 
@@ -95,6 +100,13 @@ class UserControllerTest {
     fun setup() {
         whenever(ipService.getClientIp(any())).thenReturn("127.0.0.1")
         whenever(userService.getConfig(eq(sessionId), any())).thenReturn(testConfigDTO)
+        whenever(authService.extractSessionId(any())).thenAnswer { invocation ->
+            val req = invocation.getArgument<HttpServletRequest>(0)
+            req.cookies
+                ?.find { it.name == "helmseek_session" }
+                ?.value
+                ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+        }
     }
 
     // ── GET /user/config ──────────────────────────────────────────────────────

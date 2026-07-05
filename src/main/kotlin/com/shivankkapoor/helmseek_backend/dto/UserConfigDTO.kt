@@ -54,6 +54,12 @@ data class UserConfigDTO(
     @field:Size(max = 5000)
     val quickLinks: String,
 
+    // Message of the Day
+    val motdEnabled: Boolean,
+
+    // Quote of the Day — hidden state (read-only — set via POST /quote/hideQuote, ignored on POST /user/config)
+    val hideQuote: Boolean = false,
+
     // Cached weather (read-only — updated via POST /user/weather, ignored on POST /user/config)
     val cachedTemperature: Int? = null,
     val cachedWeatherCode: Int? = null,

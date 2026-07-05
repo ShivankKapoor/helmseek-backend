@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
 
     -- Message of the Day
     motd_enabled        BOOLEAN NOT NULL DEFAULT false,
+    hide_quote          BOOLEAN NOT NULL DEFAULT false,
 
     -- Quick links (variable-length array of objects — stored as JSONB)
     quick_links_enabled BOOLEAN NOT NULL DEFAULT false,

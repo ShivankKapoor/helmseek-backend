@@ -4,7 +4,9 @@ import com.shivankkapoor.helmseek_backend.config.SecurityConfig
 import com.shivankkapoor.helmseek_backend.dto.QuoteDTO
 import com.shivankkapoor.helmseek_backend.dto.UserConfigDTO
 import com.shivankkapoor.helmseek_backend.filter.RateLimitFilter
+import com.shivankkapoor.helmseek_backend.model.User
 import com.shivankkapoor.helmseek_backend.service.AuthException
+import com.shivankkapoor.helmseek_backend.service.AuthService
 import com.shivankkapoor.helmseek_backend.service.IpService
 import com.shivankkapoor.helmseek_backend.service.QuoteService
 import com.shivankkapoor.helmseek_backend.service.UserException
@@ -40,8 +42,10 @@ class UserControllerTest {
     @MockitoBean private lateinit var userService: UserService
     @MockitoBean private lateinit var ipService: IpService
     @MockitoBean private lateinit var quoteService: QuoteService
+    @MockitoBean private lateinit var authService: AuthService
 
     private val sessionId: UUID = UUID.randomUUID()
+    private val testUser = User(id = UUID.randomUUID(), username = "testuser", password = "hashed")
 
     private val testConfigDTO = UserConfigDTO(
         themeMode = "light",
@@ -100,6 +104,7 @@ class UserControllerTest {
     fun setup() {
         whenever(ipService.getClientIp(any())).thenReturn("127.0.0.1")
         whenever(userService.getConfig(eq(sessionId), any())).thenReturn(testConfigDTO)
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
     }
 
     // ── GET /user/config ──────────────────────────────────────────────────────
@@ -296,6 +301,18 @@ class UserControllerTest {
     @Test
     fun `getQuote without cookie returns 401`() {
         mockMvc.perform(get("/user/quote"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `getQuote with invalid or expired session returns 401`() {
+        val badSession = UUID.randomUUID()
+        whenever(authService.resolveUser(badSession)).thenThrow(AuthException("Invalid or expired session"))
+
+        mockMvc.perform(
+            get("/user/quote")
+                .cookie(Cookie("helmseek_session", badSession.toString()))
+        )
             .andExpect(status().isUnauthorized)
     }
 }

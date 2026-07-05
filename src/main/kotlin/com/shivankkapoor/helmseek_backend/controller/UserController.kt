@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*
 class UserController(
     private val userService: UserService,
     private val ipService: IpService,
-    private val quoteService: QuoteService,
     private val authService: AuthService
 ) {
     companion object {
@@ -64,19 +63,6 @@ class UserController(
             userService.updateWeather(sessionId, body, ip)
             log.debug("Weather updated ip={}", ip)
             ResponseEntity.ok().build()
-        } catch (e: AuthException) {
-            ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        }
-    }
-
-    @GetMapping("/quote")
-    fun getQuote(request: HttpServletRequest): ResponseEntity<QuoteDTO> {
-        val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        val ip = ipService.getClientIp(request)
-        return try {
-            authService.resolveUser(sessionId)
-            log.info("Quote request made from ip={}", ip)
-            ResponseEntity.ok(quoteService.getQuote())
         } catch (e: AuthException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }

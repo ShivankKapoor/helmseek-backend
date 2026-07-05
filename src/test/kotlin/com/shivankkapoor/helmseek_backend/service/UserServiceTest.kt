@@ -241,4 +241,33 @@ class UserServiceTest {
 
         assertThrows<AuthException> { userService.hideQuote(sessionId, ip) }
     }
+
+    @Test
+    fun `unhideQuote clears hideQuote flag and saves user`() {
+        testUser.hideQuote = true
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(userRepository.save(any<User>())).thenReturn(testUser)
+
+        userService.unhideQuote(sessionId, ip)
+
+        assert(!testUser.hideQuote)
+        verify(userRepository).save(testUser)
+    }
+
+    @Test
+    fun `unhideQuote records unhide quote interaction`() {
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(userRepository.save(any<User>())).thenReturn(testUser)
+
+        userService.unhideQuote(sessionId, ip)
+
+        verify(interactionService).recordUnhideQuote(user = userId, ip = ip)
+    }
+
+    @Test
+    fun `unhideQuote with invalid session throws AuthException`() {
+        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+
+        assertThrows<AuthException> { userService.unhideQuote(sessionId, ip) }
+    }
 }

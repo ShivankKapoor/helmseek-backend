@@ -53,4 +53,17 @@ class QuoteController(
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
     }
+
+    @PostMapping("/unhideQuote")
+    fun unhideQuote(request: HttpServletRequest): ResponseEntity<Void> {
+        val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val ip = ipService.getClientIp(request)
+        return try {
+            userService.unhideQuote(sessionId, ip)
+            log.info("Quote unhidden ip={}", ip)
+            ResponseEntity.ok().build()
+        } catch (e: AuthException) {
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
+    }
 }

@@ -73,6 +73,14 @@ class UserService(
         interactionService.recordHideQuote(user = user.id!!, ip = ip)
     }
 
+    fun unhideQuote(sessionId: UUID, ip: String) {
+        val user = authService.resolveUser(sessionId)
+        user.hideQuote = false
+        userRepository.save(user)
+        log.info("Quote unhidden for username={}", user.username)
+        interactionService.recordUnhideQuote(user = user.id!!, ip = ip)
+    }
+
     private fun parseQuickLinks(json: String): List<QuickLink>? = try {
         objectMapper.readValue<List<QuickLink>>(json)
     } catch (e: Exception) {

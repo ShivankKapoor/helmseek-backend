@@ -68,6 +68,13 @@ class InteractionServiceTest {
     }
 
     @Test
+    fun `recordUnhideQuote saves log with correct action, user and ip`() {
+        interactionService.recordUnhideQuote(userId, ip)
+
+        verify(interactionLogRepository).save(argThat { action == "UNHIDE QUOTE" && this.ip == ip && user == userId })
+    }
+
+    @Test
     fun `repository exception does not propagate`() {
         whenever(interactionLogRepository.save(any<InteractionLog>())).thenThrow(RuntimeException("DB error"))
 

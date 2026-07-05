@@ -20,6 +20,7 @@ class InteractionService(
     private final val UPDATE_CONFIG: String = "UPDATE CONFIG"
     private final val UPDATE_WEATHER: String = "UPDATE WEATHER"
     private final val HIDE_QUOTE: String = "HIDE QUOTE"
+    private final val UNHIDE_QUOTE: String = "UNHIDE QUOTE"
 
 
     companion object {
@@ -74,5 +75,11 @@ class InteractionService(
     fun recordHideQuote(user: UUID, ip:String) {
         val geo = ipService.getLocation(ip)
         recordInteraction(InteractionLog(ip=ip, action = HIDE_QUOTE, user = user, city = geo.city, country = geo.country))
+    }
+
+    @Async
+    fun recordUnhideQuote(user: UUID, ip:String) {
+        val geo = ipService.getLocation(ip)
+        recordInteraction(InteractionLog(ip=ip, action = UNHIDE_QUOTE, user = user, city = geo.city, country = geo.country))
     }
 }

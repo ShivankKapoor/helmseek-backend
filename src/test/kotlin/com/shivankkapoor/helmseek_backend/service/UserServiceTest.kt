@@ -16,10 +16,11 @@ class UserServiceTest {
     private val authService = mock<AuthService>()
     private val userRepository = mock<UserRepository>()
     private val interactionService = mock<InteractionService>()
+    private val weatherHistoryService = mock<WeatherHistoryService>()
     private val objectMapper = JsonMapper.builder()
         .addModule(KotlinModule.Builder().build())
         .build()
-    private val userService = UserService(authService, userRepository, objectMapper, interactionService)
+    private val userService = UserService(authService, userRepository, objectMapper, interactionService, weatherHistoryService)
 
     private val sessionId = UUID.randomUUID()
     private val userId = UUID.randomUUID()
@@ -212,6 +213,25 @@ class UserServiceTest {
         whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
 
         assertThrows<AuthException> { userService.updateWeather(sessionId, validWeatherDto, ip) }
+    }
+
+    @Test
+    fun `updateWeather records weather history`() {
+        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(userRepository.save(any<User>())).thenReturn(testUser)
+
+        userService.updateWeather(sessionId, validWeatherDto, ip)
+
+        verify(weatherHistoryService).recordWeatherHistory(testUser, validWeatherDto)
+    }
+
+    @Test
+    fun `updateWeather does not record weather history on invalid session`() {
+        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+
+        runCatching { userService.updateWeather(sessionId, validWeatherDto, ip) }
+
+        verify(weatherHistoryService, never()).recordWeatherHistory(any(), any())
     }
 
     @Test

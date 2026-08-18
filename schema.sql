@@ -81,6 +81,24 @@ CREATE TABLE IF NOT EXISTS interaction_log (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
+-- ─── Weather History ──────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS weather_history (
+                                                id                    BIGSERIAL        PRIMARY KEY,
+    zip                   TEXT             NOT NULL,   -- normalized (trim + uppercase) weatherZip
+    city                  TEXT             NOT NULL,
+    lat                   DOUBLE PRECISION NOT NULL,
+    lng                   DOUBLE PRECISION NOT NULL,
+    temperature           INTEGER          NOT NULL,
+    weather_code          INTEGER          NOT NULL,
+    wind_direction        INTEGER          NOT NULL,
+    wind_speed            DOUBLE PRECISION NOT NULL,
+    weather_description   VARCHAR(50)      NOT NULL,
+    is_day                BOOLEAN          NOT NULL,
+    recorded_by           UUID             REFERENCES users(id) ON DELETE SET NULL,
+    recorded_at           TIMESTAMPTZ      NOT NULL DEFAULT now()
+    );
+
 -- ─── Indexes ──────────────────────────────────────────────────────────────────
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower ON users (LOWER(username));
@@ -89,3 +107,5 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expires_at  ON sessions (expires_at);
 CREATE INDEX IF NOT EXISTS idx_interaction_log_user_id  ON interaction_log (user_id);
 CREATE INDEX IF NOT EXISTS idx_interaction_log_action   ON interaction_log (action);
 CREATE INDEX IF NOT EXISTS idx_interaction_log_created_at ON interaction_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_weather_history_zip_recorded_at ON weather_history (zip, recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_weather_history_recorded_by ON weather_history (recorded_by);

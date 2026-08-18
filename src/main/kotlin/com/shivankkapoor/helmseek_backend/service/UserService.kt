@@ -18,7 +18,8 @@ class UserService(
     private val authService: AuthService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper,
-    private val interactionService: InteractionService
+    private val interactionService: InteractionService,
+    private val weatherHistoryService: WeatherHistoryService
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(UserService::class.java)
@@ -63,6 +64,7 @@ class UserService(
         userRepository.save(user)
         log.debug("Weather updated for username={}", user.username)
         interactionService.recordUpdateWeather(user = user.id!!, ip = ip)
+        weatherHistoryService.recordWeatherHistory(user,dto)
     }
 
     fun hideQuote(sessionId: UUID, ip: String) {

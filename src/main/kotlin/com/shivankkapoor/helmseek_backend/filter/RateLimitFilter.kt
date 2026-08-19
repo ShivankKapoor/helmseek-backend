@@ -1,6 +1,7 @@
 package com.shivankkapoor.helmseek_backend.filter
 
-import com.google.common.cache.CacheBuilder
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import com.shivankkapoor.helmseek_backend.service.IpService
 import io.github.bucket4j.Bandwidth
 import io.github.bucket4j.Bucket
@@ -27,13 +28,13 @@ class RateLimitFilter(
         private val log = LoggerFactory.getLogger(RateLimitFilter::class.java)
     }
 
-    private val globalBuckets = CacheBuilder.newBuilder()
+    private val globalBuckets: Cache<String, Bucket> = Caffeine.newBuilder()
         .expireAfterAccess(10, TimeUnit.MINUTES)
-        .build<String, Bucket>()
+        .build()
 
-    private val authBuckets = CacheBuilder.newBuilder()
+    private val authBuckets: Cache<String, Bucket> = Caffeine.newBuilder()
         .expireAfterAccess(10, TimeUnit.MINUTES)
-        .build<String, Bucket>()
+        .build()
 
     private fun globalBucket(ip: String): Bucket = globalBuckets.get(ip) {
         Bucket.builder()

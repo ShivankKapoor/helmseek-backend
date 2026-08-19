@@ -33,6 +33,13 @@ class WeatherHistoryServiceTest {
         cachedIsDay = true
     )
 
+    init {
+        // CrudRepository.save() is @NonNull; with -Xjsr305=strict an unstubbed (null-returning)
+        // mock trips a Kotlin null-check that the service's catch block would otherwise treat
+        // as a real save failure. Stub it to behave like a real save.
+        whenever(weatherHistoryRepository.save(any<WeatherHistory>())).thenAnswer { it.arguments[0] }
+    }
+
     @Test
     fun `recordWeatherHistory saves a row with fields mapped from user and dto`() {
         weatherHistoryService.recordWeatherHistory(testUser, validWeatherDto)
@@ -70,5 +77,61 @@ class WeatherHistoryServiceTest {
         whenever(weatherHistoryRepository.save(any<WeatherHistory>())).thenThrow(RuntimeException("db down"))
 
         weatherHistoryService.recordWeatherHistory(testUser, validWeatherDto)
+    }
+
+    @Test
+    fun `recordWeatherHistory skips save for the same user within the dedup window`() {
+        weatherHistoryService.recordWeatherHistory(testUser, validWeatherDto)
+        weatherHistoryService.recordWeatherHistory(testUser, validWeatherDto)
+
+        verify(weatherHistoryRepository, times(1)).save(any<WeatherHistory>())
+    }
+
+    @Test
+    fun `recordWeatherHistory saves for a different user`() {
+        val otherUser = User(
+            id = UUID.randomUUID(),
+            username = "otheruser",
+            password = "hashed",
+            weatherZip = "75019",
+            weatherCity = "Coppell",
+            weatherLat = 32.9545,
+            weatherLng = -97.0150
+        )
+
+        weatherHistoryService.recordWeatherHistory(testUser, validWeatherDto)
+        weatherHistoryService.recordWeatherHistory(otherUser, validWeatherDto)
+
+        verify(weatherHistoryRepository, times(2)).save(any<WeatherHistory>())
+    }
+
+    @Test
+    fun `recordWeatherHistory always saves for anonymous users`() {
+        val anonymousUser = User(
+            id = null,
+            username = "anon",
+            password = "hashed",
+            weatherZip = "75019",
+            weatherCity = "Coppell",
+            weatherLat = 32.9545,
+            weatherLng = -97.0150
+        )
+
+        weatherHistoryService.recordWeatherHistory(anonymousUser, validWeatherDto)
+        weatherHistoryService.recordWeatherHistory(anonymousUser, validWeatherDto)
+
+        verify(weatherHistoryRepository, times(2)).save(any<WeatherHistory>())
+    }
+
+    @Test
+    fun `recordWeatherHistory allows immediate retry after a failed save`() {
+        whenever(weatherHistoryRepository.save(any<WeatherHistory>()))
+            .thenThrow(RuntimeException("db down"))
+            .thenAnswer { it.arguments[0] }
+
+        weatherHistoryService.recordWeatherHistory(testUser, validWeatherDto)
+        weatherHistoryService.recordWeatherHistory(testUser, validWeatherDto)
+
+        verify(weatherHistoryRepository, times(2)).save(any<WeatherHistory>())
     }
 }

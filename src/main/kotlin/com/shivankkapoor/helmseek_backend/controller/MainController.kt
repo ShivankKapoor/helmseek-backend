@@ -55,8 +55,9 @@ class MainController(
             "status" to "UP",
             "uptime" to uptimeStr,
             "platform" to "Java",
-            "vendor" to System.getProperty("java.vendor"),
             "threadCount" to threadCount.toString(),
+            "runtime" to System.getProperty("java.runtime.name"),
+            "vendor" to System.getProperty("java.vendor"),
         ))
     }
 }

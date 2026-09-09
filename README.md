@@ -10,6 +10,49 @@ cookie and exchanges it with aldrop on each request; the aldrop API key never re
 browser. Users are created in aldrop, and a matching helmseek row is provisioned automatically
 on their first login.
 
+## What it stores
+
+A HelmSeek homepage is a small set of widgets, and this API is the source of truth for how
+each user has configured theirs. One `users` row holds the whole configuration:
+
+- **Theme** — light/dark and an accent colour pair
+- **Hero widget** — a clock, a greeting, both or neither; 12h/24h, optional seconds, greeting name
+- **Weather widget** — enabled flag, ZIP, screen corner, and the resolved city/lat/lng
+- **Quick links** — a user-defined list of labelled links, stored as JSON
+- **Quote of the day** — whether the quote is shown, and whether this user has hidden today's
+- **Font** — the typeface the page renders in
+
+Two tables record history rather than configuration:
+
+- **`weather_history`** — every weather reading pushed by a client, kept for later analysis and
+  deduplicated in-process so repeat pushes for the same user do not pile up
+- **`interaction_log`** — auth events with the client IP, enriched with city/country from
+  Meridian when configured. User ids are nulled rather than deleted if a user goes away.
+
+### Weather, and why the frontend pushes it
+
+The browser fetches weather from a free, rate-limited API and pushes the result here via
+`POST /user/weather`. The backend caches it on the user's row, so page loads and other devices
+read the stored copy instead of each one spending quota against that API.
+
+### Quotes
+
+Quotes come from an external quote service (`QUOTE_SERVICE_URL`). A user can hide the current
+one, and `QuoteHideResetJob` unhides every user's quote nightly at 00:30 America/Chicago, so
+hiding lasts for the day rather than forever. If the quote service is unset or unreachable, the
+API returns a placeholder rather than failing the request.
+
+## External services
+
+| Service | Variable | Required | Purpose |
+|---|---|---|---|
+| [aldrop](https://github.com/ShivankKapoor/aldrop) | `ALDROP_URL`, `ALDROP_API_KEY` | Yes | Authentication — credentials, hashing, sessions |
+| Meridian | `MERIDIAN_URL` | No | Resolves a client IP to city/country for the interaction log |
+| Quote service | `QUOTE_SERVICE_URL` | No | Supplies the quote of the day |
+
+Only aldrop is required. The other two degrade to `UNKNOWN` values when unset or unreachable,
+so the API keeps working without them.
+
 ## Stack
 
 - **Kotlin 2.3** + **Spring Boot 4.0**
@@ -78,7 +121,9 @@ Logs are written to `logs/<timestamp>_CST.log` on the host. A new file is create
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
+| GET | `/` | None | Plain welcome page |
 | GET | `/health` | None | Health check (includes DB status) |
+| GET | `/monitor` | None | Uptime, thread count and status |
 | POST | `/auth/login` | None | Authenticate via aldrop, set session cookie |
 | POST | `/auth/logout` | Cookie | Revoke the aldrop session, clear cookie |
 | GET | `/user/config` | Cookie | Get user configuration |

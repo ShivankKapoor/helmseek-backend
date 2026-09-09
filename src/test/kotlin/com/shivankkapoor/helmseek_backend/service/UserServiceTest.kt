@@ -22,10 +22,10 @@ class UserServiceTest {
         .build()
     private val userService = UserService(authService, userRepository, objectMapper, interactionService, weatherHistoryService)
 
-    private val sessionId = UUID.randomUUID()
+    private val sessionId: String = "aldrop-session-token"
     private val userId = UUID.randomUUID()
     private val ip = "127.0.0.1"
-    private val testUser = User(id = userId, username = "testuser", password = "hashed")
+    private val testUser = User(id = userId, username = "testuser")
 
     private val validDto = UserConfigDTO(
         themeMode = "dark",

@@ -17,7 +17,6 @@ class WeatherHistoryServiceTest {
     private val testUser = User(
         id = userId,
         username = "testuser",
-        password = "hashed",
         weatherZip = "  90210 ",
         weatherCity = "Beverly Hills",
         weatherLat = 34.0901,
@@ -92,7 +91,6 @@ class WeatherHistoryServiceTest {
         val otherUser = User(
             id = UUID.randomUUID(),
             username = "otheruser",
-            password = "hashed",
             weatherZip = "75019",
             weatherCity = "Coppell",
             weatherLat = 32.9545,
@@ -110,7 +108,6 @@ class WeatherHistoryServiceTest {
         val anonymousUser = User(
             id = null,
             username = "anon",
-            password = "hashed",
             weatherZip = "75019",
             weatherCity = "Coppell",
             weatherLat = 32.9545,

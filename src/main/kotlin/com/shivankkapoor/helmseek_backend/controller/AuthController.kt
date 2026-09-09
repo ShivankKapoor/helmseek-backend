@@ -14,7 +14,6 @@ import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.time.Duration
-import java.util.UUID
 
 @RestController
 @RequestMapping("/auth")
@@ -33,14 +32,14 @@ class AuthController(
     @PostMapping("/login")
     fun login(@Valid @RequestBody body: LoginRequestDTO, request: HttpServletRequest): ResponseEntity<Void> {
         val ip = ipService.getClientIp(request)
-        val sessionId = try {
+        val token = try {
             authService.login(body.username, body.password, ip)
         } catch (e: AuthException) {
             log.warn("Failed login attempt for username={} ip={}", body.username, ip)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
         log.info("Login successful for username={} ip={}", body.username, ip)
-        val cookie = buildCookie(sessionId.toString(), COOKIE_MAX_AGE)
+        val cookie = buildCookie(token, COOKIE_MAX_AGE)
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookie.toString())
             .build()
@@ -51,7 +50,7 @@ class AuthController(
         val ip = ipService.getClientIp(request)
         val sessionCookie = request.cookies?.find { it.name == COOKIE_NAME }
         if (sessionCookie != null) {
-            runCatching { authService.logout(UUID.fromString(sessionCookie.value), ip) }
+            runCatching { authService.logout(sessionCookie.value, ip) }
                 .onSuccess { log.info("Logout successful for session={} ip={}", sessionCookie.value, ip) }
                 .onFailure { log.warn("Logout failed for session={} ip={}", sessionCookie.value, ip) }
         } else {

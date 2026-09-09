@@ -22,7 +22,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.util.UUID
 
 @WebMvcTest(
     value = [AuthController::class],
@@ -42,8 +41,8 @@ class AuthControllerTest {
 
     @Test
     fun `login with valid credentials returns 200 and sets session cookie`() {
-        val sessionId = UUID.randomUUID()
-        whenever(authService.login(eq("test"), eq("test123"), any())).thenReturn(sessionId)
+        val token = "aldrop-session-token"
+        whenever(authService.login(eq("test"), eq("test123"), any())).thenReturn(token)
 
         mockMvc.perform(
             post("/auth/login")
@@ -103,7 +102,7 @@ class AuthControllerTest {
     fun `logout with valid cookie returns 200 and clears cookie`() {
         mockMvc.perform(
             post("/auth/logout")
-                .cookie(Cookie("helmseek_session", UUID.randomUUID().toString()))
+                .cookie(Cookie("helmseek_session", "aldrop-session-token"))
         )
             .andExpect(status().isOk)
             .andExpect(cookie().maxAge("helmseek_session", 0))

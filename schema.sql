@@ -8,7 +8,6 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- enables gen_random_uuid()
 CREATE TABLE IF NOT EXISTS users (
                                      id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     username        TEXT        NOT NULL,
-    password        TEXT        NOT NULL,           -- Argon2 hash
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_read       TIMESTAMPTZ,
 
@@ -60,15 +59,6 @@ CREATE TABLE IF NOT EXISTS users (
     last_weather_update         TIMESTAMPTZ
     );
 
--- ─── Sessions ─────────────────────────────────────────────────────────────────
-
-CREATE TABLE IF NOT EXISTS sessions (
-                                        id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    expires_at  TIMESTAMPTZ NOT NULL DEFAULT now() + interval '30 days'
-    );
-
 -- ─── Interaction Log ──────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS interaction_log (
@@ -102,8 +92,6 @@ CREATE TABLE IF NOT EXISTS weather_history (
 -- ─── Indexes ──────────────────────────────────────────────────────────────────
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower ON users (LOWER(username));
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id     ON sessions (user_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires_at  ON sessions (expires_at);
 CREATE INDEX IF NOT EXISTS idx_interaction_log_user_id  ON interaction_log (user_id);
 CREATE INDEX IF NOT EXISTS idx_interaction_log_action   ON interaction_log (action);
 CREATE INDEX IF NOT EXISTS idx_interaction_log_created_at ON interaction_log (created_at DESC);

@@ -42,8 +42,8 @@ class QuoteControllerTest {
     @MockitoBean private lateinit var quoteService: QuoteService
     @MockitoBean private lateinit var userService: UserService
 
-    private val sessionId: UUID = UUID.randomUUID()
-    private val testUser = User(id = UUID.randomUUID(), username = "testuser", password = "hashed")
+    private val sessionId: String = "aldrop-session-token"
+    private val testUser = User(id = UUID.randomUUID(), username = "testuser")
 
     @BeforeEach
     fun setup() {
@@ -54,7 +54,7 @@ class QuoteControllerTest {
             req.cookies
                 ?.find { it.name == "helmseek_session" }
                 ?.value
-                ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                ?.takeIf { it.isNotBlank() }
         }
     }
 
@@ -66,7 +66,7 @@ class QuoteControllerTest {
 
         mockMvc.perform(
             get("/quote")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.quote").value("Stay hungry, stay foolish."))
@@ -81,12 +81,12 @@ class QuoteControllerTest {
 
     @Test
     fun `getQuote with invalid or expired session returns 401`() {
-        val badSession = UUID.randomUUID()
+        val badSession = "aldrop-bad-token"
         whenever(authService.resolveUser(badSession)).thenThrow(AuthException("Invalid or expired session"))
 
         mockMvc.perform(
             get("/quote")
-                .cookie(Cookie("helmseek_session", badSession.toString()))
+                .cookie(Cookie("helmseek_session", badSession))
         )
             .andExpect(status().isUnauthorized)
     }
@@ -97,7 +97,7 @@ class QuoteControllerTest {
     fun `hideQuote with valid session returns 200`() {
         mockMvc.perform(
             post("/quote/hideQuote")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
         )
             .andExpect(status().isOk)
 
@@ -112,12 +112,12 @@ class QuoteControllerTest {
 
     @Test
     fun `hideQuote with invalid or expired session returns 401`() {
-        val badSession = UUID.randomUUID()
+        val badSession = "aldrop-bad-token"
         whenever(userService.hideQuote(badSession, "127.0.0.1")).thenThrow(AuthException("Invalid or expired session"))
 
         mockMvc.perform(
             post("/quote/hideQuote")
-                .cookie(Cookie("helmseek_session", badSession.toString()))
+                .cookie(Cookie("helmseek_session", badSession))
         )
             .andExpect(status().isUnauthorized)
     }
@@ -126,7 +126,7 @@ class QuoteControllerTest {
     fun `unhideQuote with valid session returns 200`() {
         mockMvc.perform(
             post("/quote/unhideQuote")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
         )
             .andExpect(status().isOk)
 
@@ -141,12 +141,12 @@ class QuoteControllerTest {
 
     @Test
     fun `unhideQuote with invalid or expired session returns 401`() {
-        val badSession = UUID.randomUUID()
+        val badSession = "aldrop-bad-token"
         whenever(userService.unhideQuote(badSession, "127.0.0.1")).thenThrow(AuthException("Invalid or expired session"))
 
         mockMvc.perform(
             post("/quote/unhideQuote")
-                .cookie(Cookie("helmseek_session", badSession.toString()))
+                .cookie(Cookie("helmseek_session", badSession))
         )
             .andExpect(status().isUnauthorized)
     }

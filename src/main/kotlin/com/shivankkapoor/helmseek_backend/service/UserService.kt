@@ -11,7 +11,6 @@ import com.shivankkapoor.helmseek_backend.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
-import java.util.UUID
 
 @Service
 class UserService(
@@ -25,14 +24,14 @@ class UserService(
         private val log = LoggerFactory.getLogger(UserService::class.java)
     }
 
-    fun getConfig(sessionId: UUID, ip: String): UserConfigDTO {
+    fun getConfig(sessionId: String, ip: String): UserConfigDTO {
         val user = authService.resolveUser(sessionId)
         log.debug("Config fetched for username={}", user.username)
         interactionService.recordGetConfig(user = user.id!!, ip = ip)
         return user.toConfigDTO()
     }
 
-    fun updateConfig(sessionId: UUID, dto: UserConfigDTO, ip: String) {
+    fun updateConfig(sessionId: String, dto: UserConfigDTO, ip: String) {
         val user = authService.resolveUser(sessionId)
         if (dto.fontFamily !in FontOptions.ALLOWED_FONTS) {
             log.warn("Invalid font family for username={}", user.username)
@@ -52,7 +51,7 @@ class UserService(
         interactionService.recordUpdateConfig(user = user.id!!, ip = ip)
     }
 
-    fun updateWeather(sessionId: UUID, dto: WeatherCacheRequestDTO, ip: String) {
+    fun updateWeather(sessionId: String, dto: WeatherCacheRequestDTO, ip: String) {
         val user = authService.resolveUser(sessionId)
         user.cachedTemperature = dto.cachedTemperature
         user.cachedWeatherCode = dto.cachedWeatherCode
@@ -67,7 +66,7 @@ class UserService(
         weatherHistoryService.recordWeatherHistory(user,dto)
     }
 
-    fun hideQuote(sessionId: UUID, ip: String) {
+    fun hideQuote(sessionId: String, ip: String) {
         val user = authService.resolveUser(sessionId)
         user.hideQuote = true
         userRepository.save(user)
@@ -75,7 +74,7 @@ class UserService(
         interactionService.recordHideQuote(user = user.id!!, ip = ip)
     }
 
-    fun unhideQuote(sessionId: UUID, ip: String) {
+    fun unhideQuote(sessionId: String, ip: String) {
         val user = authService.resolveUser(sessionId)
         user.hideQuote = false
         userRepository.save(user)

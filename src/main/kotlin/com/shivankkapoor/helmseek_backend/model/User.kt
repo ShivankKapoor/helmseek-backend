@@ -13,16 +13,14 @@ import java.util.UUID
 @Table(name = "users")
 class User(
 
+    // Assigned by aldrop, not the database — helmseek rows are provisioned on first login
+    // using the user id aldrop already issued.
     @Id
-    @Generated(event = [EventType.INSERT])
-    @Column(updatable = false, nullable = false, insertable = false)
+    @Column(updatable = false, nullable = false)
     val id: UUID? = null,
 
     @Column(nullable = false, unique = true)
     var username: String,
-
-    @Column(nullable = false)
-    var password: String,
 
     @Generated(event = [EventType.INSERT])
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)

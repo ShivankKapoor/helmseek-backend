@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.*
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -39,7 +40,7 @@ class AuthServiceTest {
         server.expect(requestTo("http://aldrop.test/auth/validate"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(header("Authorization", "Bearer test-key"))
-            .andRespond(withSuccess("""{"userId":"$userId"}""", MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess("""{"userId":"$userId","username":"testuser"}""", MediaType.APPLICATION_JSON))
     }
 
     private fun expectValidateRejected() {
@@ -206,11 +207,72 @@ class AuthServiceTest {
     }
 
     @Test
-    fun `resolveUser throws when aldrop knows the user but helmseek does not`() {
+    fun `resolveUser provisions a helmseek row on a users first login`() {
         expectValidate(userId)
         whenever(userRepository.findById(userId)).thenReturn(Optional.empty())
+        whenever(userRepository.save(any<User>())).thenAnswer { it.arguments[0] }
+
+        val result = authService.resolveUser(token())
+
+        val saved = argumentCaptor<User>()
+        verify(userRepository).save(saved.capture())
+        assert(saved.firstValue.id == userId)
+        assert(saved.firstValue.username == "testuser")
+        assert(result.id == userId)
+    }
+
+    @Test
+    fun `provisioned user gets the default profile`() {
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.empty())
+        whenever(userRepository.save(any<User>())).thenAnswer { it.arguments[0] }
+
+        val result = authService.resolveUser(token())
+
+        assert(result.themeMode == "light")
+        assert(result.quickLinks == "[]")
+        assert(!result.weatherEnabled)
+    }
+
+    @Test
+    fun `resolveUser does not provision when the helmseek row already exists`() {
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
+
+        authService.resolveUser(token())
+
+        verify(userRepository, never()).save(any<User>())
+    }
+
+    @Test
+    fun `a concurrent provision that loses the race falls back to the winners row`() {
+        expectValidate(userId)
+        whenever(userRepository.findById(userId))
+            .thenReturn(Optional.empty())
+            .thenReturn(Optional.of(testUser))
+        whenever(userRepository.save(any<User>()))
+            .thenThrow(DataIntegrityViolationException("duplicate key"))
+
+        assert(authService.resolveUser(token()) == testUser)
+    }
+
+    @Test
+    fun `provisioning that fails for any other reason throws AuthException`() {
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.empty())
+        whenever(userRepository.save(any<User>()))
+            .thenThrow(DataIntegrityViolationException("username already taken"))
 
         assertThrows<AuthException> { authService.resolveUser(token()) }
+    }
+
+    @Test
+    fun `a validate response with no username is rejected rather than provisioning a bad row`() {
+        server.expect(requestTo("http://aldrop.test/auth/validate"))
+            .andRespond(withSuccess("""{"userId":"$userId"}""", MediaType.APPLICATION_JSON))
+
+        assertThrows<AuthException> { authService.resolveUser(token()) }
+        verify(userRepository, never()).save(any<User>())
     }
 
     @Test

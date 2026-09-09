@@ -12,6 +12,7 @@ import com.shivankkapoor.helmseek_backend.repository.UserRepository
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.RestClient
@@ -40,10 +41,13 @@ class AuthService(
         private val IPV6 = Regex("""^[0-9a-fA-F:]+$""")
     }
 
-    private val userIdCache = Caffeine.newBuilder()
+    /** What aldrop tells us about a token: who owns it, and under what name. */
+    private data class AldropSession(val userId: UUID, val username: String)
+
+    private val sessionCache = Caffeine.newBuilder()
         .expireAfterWrite(TOKEN_CACHE_TTL)
         .maximumSize(TOKEN_CACHE_MAX)
-        .build<String, UUID>()
+        .build<String, AldropSession>()
 
     fun login(username: String, password: String, ip: String): String {
         val response = try {
@@ -72,8 +76,8 @@ class AuthService(
     }
 
     fun logout(token: String, ip: String) {
-        val userId = runCatching { lookupUserId(token) }.getOrNull()
-        userIdCache.invalidate(token)
+        val userId = runCatching { lookupSession(token).userId }.getOrNull()
+        sessionCache.invalidate(token)
         try {
             aldrop.post()
                 .uri("/auth/logout")
@@ -88,18 +92,34 @@ class AuthService(
         log.debug("Session deleted")
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Aldrop owns account creation, so a user can exist there before helmseek has ever seen them.
+     * The first time such a user logs in we provision their helmseek row on the spot, keyed by the
+     * id aldrop already issued. Every profile column has a default, so the new row is immediately
+     * usable.
+     */
+    @Transactional
     fun resolveUser(token: String): User {
-        val userId = lookupUserId(token)
-        return userRepository.findById(userId).orElseThrow {
-            // Present in aldrop but not helmseek — the two user tables have drifted.
-            log.error("Aldrop validated userId={} but no matching helmseek user row exists", userId)
-            AuthException("Invalid or expired session")
+        val session = lookupSession(token)
+        return userRepository.findById(session.userId).orElseGet { provision(session) }
+    }
+
+    private fun provision(session: AldropSession): User {
+        log.info("Provisioning helmseek user on first login, userId={}", session.userId)
+        return try {
+            userRepository.save(User(id = session.userId, username = session.username))
+        } catch (e: DataIntegrityViolationException) {
+            // Either a concurrent request won the race, or the username collides with a different
+            // helmseek row. Re-read decides which; only the first is recoverable.
+            userRepository.findById(session.userId).orElseThrow {
+                log.error("Could not provision helmseek user userId={}", session.userId, e)
+                AuthException("Invalid or expired session")
+            }
         }
     }
 
-    private fun lookupUserId(token: String): UUID {
-        userIdCache.getIfPresent(token)?.let { return it }
+    private fun lookupSession(token: String): AldropSession {
+        sessionCache.getIfPresent(token)?.let { return it }
 
         val response = try {
             aldrop.post()
@@ -113,8 +133,13 @@ class AuthService(
         }
 
         val userId = response?.userId ?: throw AuthException("Invalid or expired session")
-        userIdCache.put(token, userId)
-        return userId
+        val username = response.username
+        if (username == null) {
+            // An aldrop too old to return the username; provisioning could not fill a NOT NULL column.
+            log.error("Aldrop validate returned no username for userId={}", userId)
+            throw AuthException("Invalid or expired session")
+        }
+        return AldropSession(userId, username).also { sessionCache.put(token, it) }
     }
 
     /** Aldrop validates ipAddress against an IPv4/IPv6 pattern and 400s on anything else. */

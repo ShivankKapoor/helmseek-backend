@@ -24,7 +24,8 @@ data class AldropValidateRequest(
 )
 
 data class AldropValidateResponse(
-    val userId: UUID? = null
+    val userId: UUID? = null,
+    val username: String? = null
 )
 
 data class AldropLogoutRequest(val token: String)

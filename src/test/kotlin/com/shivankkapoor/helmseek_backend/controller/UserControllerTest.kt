@@ -27,7 +27,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.util.UUID
 
 @WebMvcTest(
     value = [UserController::class],
@@ -41,7 +40,7 @@ class UserControllerTest {
     @MockitoBean private lateinit var ipService: IpService
     @MockitoBean private lateinit var authService: AuthService
 
-    private val sessionId: UUID = UUID.randomUUID()
+    private val sessionId: String = "aldrop-session-token"
 
     private val testConfigDTO = UserConfigDTO(
         themeMode = "light",
@@ -105,7 +104,7 @@ class UserControllerTest {
             req.cookies
                 ?.find { it.name == "helmseek_session" }
                 ?.value
-                ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                ?.takeIf { it.isNotBlank() }
         }
     }
 
@@ -115,7 +114,7 @@ class UserControllerTest {
     fun `getConfig with valid session returns 200 and config`() {
         mockMvc.perform(
             get("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.themeMode").value("light"))
@@ -130,12 +129,12 @@ class UserControllerTest {
 
     @Test
     fun `getConfig with invalid session returns 401`() {
-        val badSession = UUID.randomUUID()
+        val badSession = "aldrop-bad-token"
         whenever(userService.getConfig(eq(badSession), any())).thenThrow(AuthException("Invalid or expired session"))
 
         mockMvc.perform(
             get("/user/config")
-                .cookie(Cookie("helmseek_session", badSession.toString()))
+                .cookie(Cookie("helmseek_session", badSession))
         )
             .andExpect(status().isUnauthorized)
     }
@@ -146,7 +145,7 @@ class UserControllerTest {
     fun `updateConfig with valid body returns 200`() {
         mockMvc.perform(
             post("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validConfig)
         )
@@ -168,7 +167,7 @@ class UserControllerTest {
         val bad = validConfig.replace("\"dark\"", "\"invalid\"")
         mockMvc.perform(
             post("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bad)
         )
@@ -180,7 +179,7 @@ class UserControllerTest {
         val bad = validConfig.replace("\"greeting\"", "\"unknown\"")
         mockMvc.perform(
             post("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bad)
         )
@@ -193,7 +192,7 @@ class UserControllerTest {
         whenever(userService.updateConfig(eq(sessionId), any(), any())).thenThrow(UserException("Invalid font family"))
         mockMvc.perform(
             post("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bad)
         )
@@ -206,7 +205,7 @@ class UserControllerTest {
         whenever(userService.updateConfig(eq(sessionId), any(), any())).thenThrow(UserException("Invalid URL"))
         mockMvc.perform(
             post("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bad)
         )
@@ -219,7 +218,7 @@ class UserControllerTest {
         whenever(userService.updateConfig(eq(sessionId), any(), any())).thenThrow(UserException("Invalid JSON"))
         mockMvc.perform(
             post("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bad)
         )
@@ -231,7 +230,7 @@ class UserControllerTest {
         val good = validConfig.replace("\"[]\"", "\"[{\\\"label\\\":\\\"Google\\\",\\\"url\\\":\\\"https://google.com\\\"}]\"")
         mockMvc.perform(
             post("/user/config")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(good)
         )
@@ -244,7 +243,7 @@ class UserControllerTest {
     fun `updateWeather with valid body returns 200`() {
         mockMvc.perform(
             post("/user/weather")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validWeather)
         )
@@ -266,7 +265,7 @@ class UserControllerTest {
         val bad = validWeather.replace("72", "200")
         mockMvc.perform(
             post("/user/weather")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bad)
         )
@@ -278,7 +277,7 @@ class UserControllerTest {
         val bad = validWeather.replace("180", "400")
         mockMvc.perform(
             post("/user/weather")
-                .cookie(Cookie("helmseek_session", sessionId.toString()))
+                .cookie(Cookie("helmseek_session", sessionId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bad)
         )

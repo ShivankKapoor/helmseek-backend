@@ -21,9 +21,6 @@ class User(
     @Column(nullable = false, unique = true)
     var username: String,
 
-    @Column(nullable = false)
-    var password: String,
-
     @Generated(event = [EventType.INSERT])
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     val createdAt: OffsetDateTime? = null,

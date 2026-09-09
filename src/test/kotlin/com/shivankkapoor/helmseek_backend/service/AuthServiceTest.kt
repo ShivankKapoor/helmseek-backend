@@ -1,104 +1,127 @@
 package com.shivankkapoor.helmseek_backend.service
 
-import com.shivankkapoor.helmseek_backend.model.Session
 import com.shivankkapoor.helmseek_backend.model.User
-import com.shivankkapoor.helmseek_backend.repository.SessionRepository
 import com.shivankkapoor.helmseek_backend.repository.UserRepository
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.*
-import org.springframework.security.crypto.password.PasswordEncoder
-import java.time.OffsetDateTime
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.test.web.client.MockRestServiceServer
+import org.springframework.test.web.client.match.MockRestRequestMatchers.*
+import org.springframework.test.web.client.response.MockRestResponseCreators.*
+import org.springframework.web.client.RestClient
 import java.util.Optional
 import java.util.UUID
 
 class AuthServiceTest {
 
     private val userRepository = mock<UserRepository>()
-    private val sessionRepository = mock<SessionRepository>()
-    private val passwordEncoder = mock<PasswordEncoder>()
     private val interactionService = mock<InteractionService>()
-    private val authService = AuthService(userRepository, sessionRepository, passwordEncoder, interactionService)
+
+    private val builder = RestClient.builder()
+        .baseUrl("http://aldrop.test")
+        .defaultHeader("Authorization", "Bearer test-key")
+    private val server: MockRestServiceServer = MockRestServiceServer.bindTo(builder).build()
+    private val authService = AuthService(userRepository, interactionService, builder.build())
 
     private val userId = UUID.randomUUID()
-    private val testUser = User(id = userId, username = "testuser", password = "hashed")
+    private val testUser = User(id = userId, username = "testuser")
     private val ip = "127.0.0.1"
+
+    /** Tokens must be unique per test — AuthService caches token -> userId for 45s. */
+    private fun token() = UUID.randomUUID().toString()
+
+    private fun expectValidate(userId: UUID) {
+        server.expect(requestTo("http://aldrop.test/auth/validate"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(header("Authorization", "Bearer test-key"))
+            .andRespond(withSuccess("""{"userId":"$userId"}""", MediaType.APPLICATION_JSON))
+    }
+
+    private fun expectValidateRejected() {
+        server.expect(requestTo("http://aldrop.test/auth/validate"))
+            .andRespond(withStatus(HttpStatus.UNAUTHORIZED))
+    }
+
+    private fun expectLogin(token: String) {
+        server.expect(requestTo("http://aldrop.test/auth/login"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("""{"token":"$token","totpToken":null}""", MediaType.APPLICATION_JSON))
+    }
 
     // ── login ──────────────────────────────────────────────────────────────────
 
     @Test
-    fun `login with valid credentials returns session id`() {
-        val session = Session(id = UUID.randomUUID(), user = testUser)
-        whenever(userRepository.findByUsername("testuser")).thenReturn(testUser)
-        whenever(passwordEncoder.matches("password", "hashed")).thenReturn(true)
-        whenever(sessionRepository.save(any<Session>())).thenReturn(session)
+    fun `login with valid credentials returns aldrop token`() {
+        val token = token()
+        expectLogin(token)
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
 
         val result = authService.login("testuser", "password", ip)
 
-        assert(result == session.id)
-        verify(sessionRepository).save(any<Session>())
+        assert(result == token)
+        server.verify()
     }
 
     @Test
     fun `login normalises username to lowercase`() {
-        whenever(userRepository.findByUsername("testuser")).thenReturn(testUser)
-        whenever(passwordEncoder.matches(any(), any())).thenReturn(true)
-        whenever(sessionRepository.save(any<Session>())).thenReturn(Session(id = UUID.randomUUID(), user = testUser))
+        val token = token()
+        server.expect(requestTo("http://aldrop.test/auth/login"))
+            .andExpect(jsonPath("$.username").value("testuser"))
+            .andRespond(withSuccess("""{"token":"$token"}""", MediaType.APPLICATION_JSON))
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
 
         authService.login("TestUser", "password", ip)
 
-        verify(userRepository).findByUsername("testuser")
+        server.verify()
     }
 
     @Test
-    fun `login with unknown username throws AuthException`() {
-        whenever(userRepository.findByUsername(any())).thenReturn(null)
+    fun `login sends the client ip to aldrop`() {
+        val token = token()
+        server.expect(requestTo("http://aldrop.test/auth/login"))
+            .andExpect(jsonPath("$.ipAddress").value(ip))
+            .andRespond(withSuccess("""{"token":"$token"}""", MediaType.APPLICATION_JSON))
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
 
-        assertThrows<AuthException> { authService.login("unknown", "password", ip) }
+        authService.login("testuser", "password", ip)
+
+        server.verify()
     }
 
     @Test
-    fun `login with unknown username still runs dummy hash to prevent timing oracle`() {
-        whenever(userRepository.findByUsername(any())).thenReturn(null)
+    fun `login omits a non-ip address rather than sending one aldrop would reject`() {
+        val token = token()
+        server.expect(requestTo("http://aldrop.test/auth/login"))
+            .andExpect(jsonPath("$.ipAddress").doesNotExist())
+            .andRespond(withSuccess("""{"token":"$token"}""", MediaType.APPLICATION_JSON))
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
 
-        runCatching { authService.login("unknown", "password", ip) }
+        authService.login("testuser", "password", "unknown")
 
-        verify(passwordEncoder).matches(eq("password"), any())
+        server.verify()
     }
 
     @Test
-    fun `login with wrong password throws AuthException`() {
-        whenever(userRepository.findByUsername("testuser")).thenReturn(testUser)
-        whenever(passwordEncoder.matches("wrong", "hashed")).thenReturn(false)
+    fun `login with bad credentials throws AuthException`() {
+        server.expect(requestTo("http://aldrop.test/auth/login"))
+            .andRespond(withStatus(HttpStatus.UNAUTHORIZED))
 
         assertThrows<AuthException> { authService.login("testuser", "wrong", ip) }
     }
 
     @Test
-    fun `login with wrong password does not create session`() {
-        whenever(userRepository.findByUsername("testuser")).thenReturn(testUser)
-        whenever(passwordEncoder.matches(any(), any())).thenReturn(false)
-
-        runCatching { authService.login("testuser", "wrong", ip) }
-
-        verify(sessionRepository, never()).save(any<Session>())
-    }
-
-    @Test
-    fun `login with unknown username records auth failed`() {
-        whenever(userRepository.findByUsername(any())).thenReturn(null)
-
-        runCatching { authService.login("unknown", "password", ip) }
-
-        verify(interactionService).recordAuthFailed(ip)
-    }
-
-    @Test
-    fun `login with wrong password records auth failed`() {
-        whenever(userRepository.findByUsername("testuser")).thenReturn(testUser)
-        whenever(passwordEncoder.matches(any(), any())).thenReturn(false)
+    fun `login with bad credentials records auth failed`() {
+        server.expect(requestTo("http://aldrop.test/auth/login"))
+            .andRespond(withStatus(HttpStatus.UNAUTHORIZED))
 
         runCatching { authService.login("testuser", "wrong", ip) }
 
@@ -106,11 +129,19 @@ class AuthServiceTest {
     }
 
     @Test
-    fun `login with valid credentials records auth success`() {
-        val session = Session(id = UUID.randomUUID(), user = testUser)
-        whenever(userRepository.findByUsername("testuser")).thenReturn(testUser)
-        whenever(passwordEncoder.matches("password", "hashed")).thenReturn(true)
-        whenever(sessionRepository.save(any<Session>())).thenReturn(session)
+    fun `login when aldrop is unreachable throws AuthException`() {
+        server.expect(requestTo("http://aldrop.test/auth/login"))
+            .andRespond(withServerError())
+
+        assertThrows<AuthException> { authService.login("testuser", "password", ip) }
+    }
+
+    @Test
+    fun `login records auth success with the resolved user id`() {
+        val token = token()
+        expectLogin(token)
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
 
         authService.login("testuser", "password", ip)
 
@@ -120,71 +151,80 @@ class AuthServiceTest {
     // ── logout ─────────────────────────────────────────────────────────────────
 
     @Test
-    fun `logout deletes session by id`() {
-        val sessionId = UUID.randomUUID()
-        whenever(sessionRepository.findById(sessionId)).thenReturn(Optional.empty())
+    fun `logout posts the token to aldrop`() {
+        val token = token()
+        expectValidate(userId)
+        server.expect(requestTo("http://aldrop.test/auth/logout"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.token").value(token))
+            .andRespond(withSuccess())
 
-        authService.logout(sessionId, ip)
+        authService.logout(token, ip)
 
-        verify(sessionRepository).deleteById(sessionId)
+        server.verify()
     }
 
     @Test
-    fun `logout records auth logout when session exists`() {
-        val sessionId = UUID.randomUUID()
-        val session = Session(id = sessionId, user = testUser)
-        whenever(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session))
+    fun `logout records auth logout for the session owner`() {
+        val token = token()
+        expectValidate(userId)
+        server.expect(requestTo("http://aldrop.test/auth/logout")).andRespond(withSuccess())
 
-        authService.logout(sessionId, ip)
+        authService.logout(token, ip)
 
         verify(interactionService).recordAuthLogout(user = userId, ip = ip)
     }
 
     @Test
-    fun `logout does not record interaction when session not found`() {
-        val sessionId = UUID.randomUUID()
-        whenever(sessionRepository.findById(sessionId)).thenReturn(Optional.empty())
+    fun `logout of an already invalid session still clears it and records nothing`() {
+        val token = token()
+        expectValidateRejected()
+        server.expect(requestTo("http://aldrop.test/auth/logout")).andRespond(withSuccess())
 
-        authService.logout(sessionId, ip)
+        authService.logout(token, ip)
 
         verify(interactionService, never()).recordAuthLogout(any(), any())
+        server.verify()
     }
 
     // ── resolveUser ────────────────────────────────────────────────────────────
 
     @Test
-    fun `resolveUser with valid session returns user`() {
-        val sessionId = UUID.randomUUID()
-        val session = Session(id = sessionId, user = testUser)
-        whenever(sessionRepository.findByIdAndExpiresAtAfter(eq(sessionId), any())).thenReturn(session)
+    fun `resolveUser with valid token returns user`() {
+        val token = token()
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
 
-        val result = authService.resolveUser(sessionId)
-
-        assert(result == testUser)
+        assert(authService.resolveUser(token) == testUser)
     }
 
     @Test
-    fun `resolveUser with expired or missing session throws AuthException`() {
-        val sessionId = UUID.randomUUID()
-        whenever(sessionRepository.findByIdAndExpiresAtAfter(eq(sessionId), any())).thenReturn(null)
+    fun `resolveUser with rejected token throws AuthException`() {
+        expectValidateRejected()
 
-        assertThrows<AuthException> { authService.resolveUser(sessionId) }
+        assertThrows<AuthException> { authService.resolveUser(token()) }
     }
 
     @Test
-    fun `resolveUser passes current time to expiry check`() {
-        val sessionId = UUID.randomUUID()
-        whenever(sessionRepository.findByIdAndExpiresAtAfter(eq(sessionId), any())).thenReturn(null)
+    fun `resolveUser throws when aldrop knows the user but helmseek does not`() {
+        expectValidate(userId)
+        whenever(userRepository.findById(userId)).thenReturn(Optional.empty())
 
-        val before = OffsetDateTime.now()
-        runCatching { authService.resolveUser(sessionId) }
-        val after = OffsetDateTime.now()
-
-        val captor = argumentCaptor<OffsetDateTime>()
-        verify(sessionRepository).findByIdAndExpiresAtAfter(eq(sessionId), captor.capture())
-        val used = captor.firstValue
-        assert(!used.isBefore(before) && !used.isAfter(after))
+        assertThrows<AuthException> { authService.resolveUser(token()) }
     }
+
+    @Test
+    fun `resolveUser caches the token so repeat calls do not re-hit aldrop`() {
+        val token = token()
+        expectValidate(userId)   // exactly one validate expected
+        whenever(userRepository.findById(userId)).thenReturn(Optional.of(testUser))
+
+        repeat(5) { authService.resolveUser(token) }
+
+        server.verify()
+    }
+
+    // ── extractSessionId ───────────────────────────────────────────────────────
 
     private fun requestWithCookies(vararg cookies: Cookie): HttpServletRequest {
         val request = mock<HttpServletRequest>()
@@ -193,11 +233,10 @@ class AuthServiceTest {
     }
 
     @Test
-    fun `extractSessionId with valid session cookie returns UUID`() {
-        val sessionId = UUID.randomUUID()
-        val request = requestWithCookies(Cookie("helmseek_session", sessionId.toString()))
+    fun `extractSessionId returns the opaque cookie value verbatim`() {
+        val request = requestWithCookies(Cookie("helmseek_session", "aldrop-opaque-token"))
 
-        assert(authService.extractSessionId(request) == sessionId)
+        assert(authService.extractSessionId(request) == "aldrop-opaque-token")
     }
 
     @Test
@@ -216,8 +255,8 @@ class AuthServiceTest {
     }
 
     @Test
-    fun `extractSessionId with malformed session cookie returns null`() {
-        val request = requestWithCookies(Cookie("helmseek_session", "not-a-uuid"))
+    fun `extractSessionId with blank session cookie returns null`() {
+        val request = requestWithCookies(Cookie("helmseek_session", ""))
 
         assert(authService.extractSessionId(request) == null)
     }

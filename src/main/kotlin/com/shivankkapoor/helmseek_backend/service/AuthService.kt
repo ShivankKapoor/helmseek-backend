@@ -119,7 +119,11 @@ class AuthService(
     }
 
     private fun lookupSession(token: String): AldropSession {
-        sessionCache.getIfPresent(token)?.let { return it }
+        sessionCache.getIfPresent(token)?.let {
+            log.info("Session cache hit for userId={}", it.userId)
+            return it
+        }
+        log.info("Session cache miss, validating token against aldrop")
 
         val response = try {
             aldrop.post()

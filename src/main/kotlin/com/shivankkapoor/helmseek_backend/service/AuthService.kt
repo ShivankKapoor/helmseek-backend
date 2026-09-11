@@ -69,19 +69,19 @@ class AuthService(
             throw AuthException("Invalid credentials")
         }
 
-        val user = resolveUser(token)
+        val user = resolveUser(token, ip)
         interactionService.recordAuthSuccess(user = user.id!!, ip = ip)
         log.debug("Session created for username={}", username)
         return token
     }
 
     fun logout(token: String, ip: String) {
-        val userId = runCatching { lookupSession(token).userId }.getOrNull()
+        val userId = runCatching { lookupSession(token, ip).userId }.getOrNull()
         sessionCache.invalidate(token)
         try {
             aldrop.post()
                 .uri("/auth/logout")
-                .body(AldropLogoutRequest(token))
+                .body(AldropLogoutRequest(token, sanitizeIp(ip)))
                 .retrieve()
                 .toBodilessEntity()
         } catch (e: RestClientException) {
@@ -99,8 +99,8 @@ class AuthService(
      * usable.
      */
     @Transactional
-    fun resolveUser(token: String): User {
-        val session = lookupSession(token)
+    fun resolveUser(token: String, ip: String? = null): User {
+        val session = lookupSession(token, ip)
         return userRepository.findById(session.userId).orElseGet { provision(session) }
     }
 
@@ -118,7 +118,7 @@ class AuthService(
         }
     }
 
-    private fun lookupSession(token: String): AldropSession {
+    private fun lookupSession(token: String, ip: String? = null): AldropSession {
         sessionCache.getIfPresent(token)?.let {
             log.info("Session cache hit for userId={}", it.userId)
             return it
@@ -128,7 +128,7 @@ class AuthService(
         val response = try {
             aldrop.post()
                 .uri("/auth/validate")
-                .body(AldropValidateRequest(token, null, null))
+                .body(AldropValidateRequest(token, sanitizeIp(ip), null))
                 .retrieve()
                 .body(AldropValidateResponse::class.java)
         } catch (e: RestClientException) {
@@ -147,8 +147,8 @@ class AuthService(
     }
 
     /** Aldrop validates ipAddress against an IPv4/IPv6 pattern and 400s on anything else. */
-    private fun sanitizeIp(ip: String): String? =
-        ip.takeIf { IPV4.matches(it) || (it.contains(':') && IPV6.matches(it)) }
+    private fun sanitizeIp(ip: String?): String? =
+        ip?.takeIf { IPV4.matches(it) || (it.contains(':') && IPV6.matches(it)) }
 
     fun extractSessionId(request: HttpServletRequest): String? =
         request.cookies

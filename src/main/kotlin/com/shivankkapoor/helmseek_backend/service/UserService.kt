@@ -25,14 +25,14 @@ class UserService(
     }
 
     fun getConfig(sessionId: String, ip: String): UserConfigDTO {
-        val user = authService.resolveUser(sessionId)
+        val user = authService.resolveUser(sessionId, ip)
         log.debug("Config fetched for username={}", user.username)
         interactionService.recordGetConfig(user = user.id!!, ip = ip)
         return user.toConfigDTO()
     }
 
     fun updateConfig(sessionId: String, dto: UserConfigDTO, ip: String) {
-        val user = authService.resolveUser(sessionId)
+        val user = authService.resolveUser(sessionId, ip)
         if (dto.fontFamily !in FontOptions.ALLOWED_FONTS) {
             log.warn("Invalid font family for username={}", user.username)
             throw UserException("Invalid font family")
@@ -52,7 +52,7 @@ class UserService(
     }
 
     fun updateWeather(sessionId: String, dto: WeatherCacheRequestDTO, ip: String) {
-        val user = authService.resolveUser(sessionId)
+        val user = authService.resolveUser(sessionId, ip)
         user.cachedTemperature = dto.cachedTemperature
         user.cachedWeatherCode = dto.cachedWeatherCode
         user.cachedWindDirection = dto.cachedWindDirection
@@ -67,7 +67,7 @@ class UserService(
     }
 
     fun hideQuote(sessionId: String, ip: String) {
-        val user = authService.resolveUser(sessionId)
+        val user = authService.resolveUser(sessionId, ip)
         user.hideQuote = true
         userRepository.save(user)
         log.info("Quote hidden for username={}", user.username)
@@ -75,7 +75,7 @@ class UserService(
     }
 
     fun unhideQuote(sessionId: String, ip: String) {
-        val user = authService.resolveUser(sessionId)
+        val user = authService.resolveUser(sessionId, ip)
         user.hideQuote = false
         userRepository.save(user)
         log.info("Quote unhidden for username={}", user.username)

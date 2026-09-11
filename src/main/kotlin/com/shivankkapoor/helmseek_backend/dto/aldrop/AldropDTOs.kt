@@ -28,4 +28,4 @@ data class AldropValidateResponse(
     val username: String? = null
 )
 
-data class AldropLogoutRequest(val token: String)
+data class AldropLogoutRequest(val token: String, val ipAddress: String? = null)

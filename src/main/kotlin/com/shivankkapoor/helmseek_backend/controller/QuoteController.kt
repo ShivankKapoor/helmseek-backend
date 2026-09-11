@@ -33,7 +33,7 @@ class QuoteController(
         val sessionId = authService.extractSessionId(request) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val ip = ipService.getClientIp(request)
         return try {
-            authService.resolveUser(sessionId)
+            authService.resolveUser(sessionId, ip)
             log.info("Quote request made from ip={}", ip)
             ResponseEntity.ok(quoteService.getQuote())
         } catch (e: AuthException) {

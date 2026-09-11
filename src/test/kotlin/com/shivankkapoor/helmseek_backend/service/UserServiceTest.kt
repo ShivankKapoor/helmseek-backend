@@ -60,7 +60,7 @@ class UserServiceTest {
 
     @Test
     fun `getConfig returns DTO for valid session`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
 
         val result = userService.getConfig(sessionId, ip)
 
@@ -70,7 +70,7 @@ class UserServiceTest {
 
     @Test
     fun `getConfig records get config interaction`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
 
         userService.getConfig(sessionId, ip)
 
@@ -79,7 +79,7 @@ class UserServiceTest {
 
     @Test
     fun `getConfig with invalid session throws AuthException`() {
-        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+        whenever(authService.resolveUser(sessionId, ip)).thenThrow(AuthException("Invalid session"))
 
         assertThrows<AuthException> { userService.getConfig(sessionId, ip) }
     }
@@ -88,7 +88,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig saves user`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.updateConfig(sessionId, validDto, ip)
@@ -98,7 +98,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig applies config fields to user`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.updateConfig(sessionId, validDto, ip)
@@ -108,7 +108,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig records update config interaction`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.updateConfig(sessionId, validDto, ip)
@@ -118,14 +118,14 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig with invalid session throws AuthException`() {
-        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+        whenever(authService.resolveUser(sessionId, ip)).thenThrow(AuthException("Invalid session"))
 
         assertThrows<AuthException> { userService.updateConfig(sessionId, validDto, ip) }
     }
 
     @Test
     fun `updateConfig with invalid font family throws UserException`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         val dto = validDto.copy(fontFamily = "Comic Sans MS")
 
         assertThrows<UserException> { userService.updateConfig(sessionId, dto, ip) }
@@ -133,7 +133,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig with malformed quick links throws UserException`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         val dto = validDto.copy(quickLinks = "not-json")
 
         assertThrows<UserException> { userService.updateConfig(sessionId, dto, ip) }
@@ -141,7 +141,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig with javascript url throws UserException`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         val dto = validDto.copy(quickLinks = """[{"label":"x","url":"javascript:alert(1)"}]""")
 
         assertThrows<UserException> { userService.updateConfig(sessionId, dto, ip) }
@@ -149,7 +149,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig with http url succeeds`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
         val dto = validDto.copy(quickLinks = """[{"label":"Google","url":"http://google.com"}]""")
 
@@ -160,7 +160,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig with https url succeeds`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
         val dto = validDto.copy(quickLinks = """[{"label":"Google","url":"https://google.com"}]""")
 
@@ -171,7 +171,7 @@ class UserServiceTest {
 
     @Test
     fun `updateConfig does not record interaction on failure`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         val dto = validDto.copy(quickLinks = "not-json")
 
         runCatching { userService.updateConfig(sessionId, dto, ip) }
@@ -183,7 +183,7 @@ class UserServiceTest {
 
     @Test
     fun `updateWeather saves all weather fields`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.updateWeather(sessionId, validWeatherDto, ip)
@@ -200,7 +200,7 @@ class UserServiceTest {
 
     @Test
     fun `updateWeather records update weather interaction`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.updateWeather(sessionId, validWeatherDto, ip)
@@ -210,14 +210,14 @@ class UserServiceTest {
 
     @Test
     fun `updateWeather with invalid session throws AuthException`() {
-        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+        whenever(authService.resolveUser(sessionId, ip)).thenThrow(AuthException("Invalid session"))
 
         assertThrows<AuthException> { userService.updateWeather(sessionId, validWeatherDto, ip) }
     }
 
     @Test
     fun `updateWeather records weather history`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.updateWeather(sessionId, validWeatherDto, ip)
@@ -227,7 +227,7 @@ class UserServiceTest {
 
     @Test
     fun `updateWeather does not record weather history on invalid session`() {
-        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+        whenever(authService.resolveUser(sessionId, ip)).thenThrow(AuthException("Invalid session"))
 
         runCatching { userService.updateWeather(sessionId, validWeatherDto, ip) }
 
@@ -236,7 +236,7 @@ class UserServiceTest {
 
     @Test
     fun `hideQuote sets hideQuote flag and saves user`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.hideQuote(sessionId, ip)
@@ -247,7 +247,7 @@ class UserServiceTest {
 
     @Test
     fun `hideQuote records hide quote interaction`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.hideQuote(sessionId, ip)
@@ -257,7 +257,7 @@ class UserServiceTest {
 
     @Test
     fun `hideQuote with invalid session throws AuthException`() {
-        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+        whenever(authService.resolveUser(sessionId, ip)).thenThrow(AuthException("Invalid session"))
 
         assertThrows<AuthException> { userService.hideQuote(sessionId, ip) }
     }
@@ -265,7 +265,7 @@ class UserServiceTest {
     @Test
     fun `unhideQuote clears hideQuote flag and saves user`() {
         testUser.hideQuote = true
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.unhideQuote(sessionId, ip)
@@ -276,7 +276,7 @@ class UserServiceTest {
 
     @Test
     fun `unhideQuote records unhide quote interaction`() {
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, ip)).thenReturn(testUser)
         whenever(userRepository.save(any<User>())).thenReturn(testUser)
 
         userService.unhideQuote(sessionId, ip)
@@ -286,7 +286,7 @@ class UserServiceTest {
 
     @Test
     fun `unhideQuote with invalid session throws AuthException`() {
-        whenever(authService.resolveUser(sessionId)).thenThrow(AuthException("Invalid session"))
+        whenever(authService.resolveUser(sessionId, ip)).thenThrow(AuthException("Invalid session"))
 
         assertThrows<AuthException> { userService.unhideQuote(sessionId, ip) }
     }

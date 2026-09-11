@@ -48,7 +48,7 @@ class QuoteControllerTest {
     @BeforeEach
     fun setup() {
         whenever(ipService.getClientIp(any())).thenReturn("127.0.0.1")
-        whenever(authService.resolveUser(sessionId)).thenReturn(testUser)
+        whenever(authService.resolveUser(sessionId, "127.0.0.1")).thenReturn(testUser)
         whenever(authService.extractSessionId(any())).thenAnswer { invocation ->
             val req = invocation.getArgument<HttpServletRequest>(0)
             req.cookies
@@ -82,7 +82,7 @@ class QuoteControllerTest {
     @Test
     fun `getQuote with invalid or expired session returns 401`() {
         val badSession = "aldrop-bad-token"
-        whenever(authService.resolveUser(badSession)).thenThrow(AuthException("Invalid or expired session"))
+        whenever(authService.resolveUser(badSession, "127.0.0.1")).thenThrow(AuthException("Invalid or expired session"))
 
         mockMvc.perform(
             get("/quote")

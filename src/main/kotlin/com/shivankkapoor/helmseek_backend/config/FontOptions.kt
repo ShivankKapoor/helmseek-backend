@@ -3,16 +3,12 @@ package com.shivankkapoor.helmseek_backend.config
 object FontOptions {
     val ALLOWED_FONTS = listOf(
         "Fira Code",
-        "JetBrains Mono",
-        "Cascadia Code",
+        "Fraunces",
         "IBM Plex Mono",
-        "Source Code Pro",
+        "Sora",
         "Space Mono",
-        "Roboto Mono",
-        "Ubuntu Mono",
         "Inter",
         "Roboto",
         "Nunito",
-        "Arimo",
     )
 }

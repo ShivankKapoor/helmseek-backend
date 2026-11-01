@@ -1,0 +1,15 @@
+services:
+  helmseek-backend:
+    build: .
+    image: helmseek-backend
+    container_name: helmseek-backend
+    restart: unless-stopped
+    ports:
+      - "7666:7666"
+    volumes:
+      - ./.env:/app/.env:ro,Z
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "10"

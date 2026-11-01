@@ -106,16 +106,16 @@ will fail to start without them. See `.env.example` for the full list.
 
 Requires PostgreSQL running and a `.env` file present.
 
-## Running in Production (Podman)
+## Running in Production (Docker)
 
 ```bash
-./run.sh    # build image, start container, begin log streaming
-./stop.sh   # stop container and remove image
+docker compose up -d --build   # build image and start container
+docker compose down            # stop and remove the container
 ```
 
 The container runs on port **7666**. The `.env` file is bind-mounted read-only at runtime — it is never baked into the image.
 
-Logs are written to `logs/<timestamp>_CST.log` on the host. A new file is created on each container start.
+Logs are kept by Docker's `local` driver (10 files of 10 MB, oldest dropped first). View them with `docker logs -f helmseek-backend`. They survive restarts but are deleted with the container, so `docker compose down` or a recreate on `up --build` starts a fresh log.
 
 ## API
 

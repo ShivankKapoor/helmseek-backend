@@ -4,6 +4,9 @@ services:
     image: helmseek-backend
     container_name: helmseek-backend
     restart: unless-stopped
+    dns:
+      - 9.9.9.9
+      - 1.1.1.1
     ports:
       - "7666:7666"
     volumes:

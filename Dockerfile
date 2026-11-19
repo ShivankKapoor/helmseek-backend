@@ -17,7 +17,7 @@ COPY src/ src/
 RUN ./gradlew bootJar --no-daemon -x test
 
 # ─── Stage 2: Run ─────────────────────────────────────────────────────────────
-FROM docker.io/library/ibm-semeru-runtimes:open-25-jre AS runner
+FROM docker.io/library/ibm-semeru-runtimes:open-25-jre-noble AS runner
 
 WORKDIR /app
 
